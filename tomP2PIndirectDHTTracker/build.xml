@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="create_run_jar" name="Create Runnable Jar for Project tomP2P">
+    <!--this file was created by Eclipse Runnable JAR Export Wizard-->
+    <!--ANT 1.7 is required                                        -->
+    <!--define folder properties-->
+    <property name="dir.buildfile" value="."/>
+    <property name="dir.workspace" value="${dir.buildfile}/.."/>
+    <property name="dir.jarfile" value="C:/Users/SAIRAMUDAYAJANARDHAN/Desktop"/>
+    <target name="create_run_jar">
+        <jar destfile="${dir.jarfile}/outP2PNew.jar" filesetmanifest="mergewithoutmain">
+            <manifest>
+                <attribute name="Main-Class" value="tomP2P.ExampleSimple"/>
+                <attribute name="Class-Path" value="."/>
+            </manifest>
+            <fileset dir="${dir.buildfile}/bin"/>
+            <zipfileset excludes="META-INF/*.SF" src="D:/CU Boulder/F16-Sem3/DistributedSystems/Project/tomp2p/TomP2P-4.4-dist/TomP2P-4.4/lib/hamcrest-core-1.1.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="D:/CU Boulder/F16-Sem3/DistributedSystems/Project/tomp2p/TomP2P-4.4-dist/TomP2P-4.4/lib/jdbm-3.0-alpha.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="D:/CU Boulder/F16-Sem3/DistributedSystems/Project/tomp2p/TomP2P-4.4-dist/TomP2P-4.4/lib/json-simple-1.1.1.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="D:/CU Boulder/F16-Sem3/DistributedSystems/Project/tomp2p/TomP2P-4.4-dist/TomP2P-4.4/lib/junit-4.10.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="D:/CU Boulder/F16-Sem3/DistributedSystems/Project/tomp2p/TomP2P-4.4-dist/TomP2P-4.4/lib/logback-classic-1.0.1.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="D:/CU Boulder/F16-Sem3/DistributedSystems/Project/tomp2p/TomP2P-4.4-dist/TomP2P-4.4/lib/logback-core-1.0.1.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="D:/CU Boulder/F16-Sem3/DistributedSystems/Project/tomp2p/TomP2P-4.4-dist/TomP2P-4.4/lib/netty-3.5.3.Patched.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="D:/CU Boulder/F16-Sem3/DistributedSystems/Project/tomp2p/TomP2P-4.4-dist/TomP2P-4.4/lib/slf4j-api-1.6.4.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="D:/CU Boulder/F16-Sem3/DistributedSystems/Project/tomp2p/TomP2P-4.4-dist/TomP2P-4.4/TomP2P-4.4.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="D:/CU Boulder/F16-Sem3/DistributedSystems/Project/tomp2p/TomP2P-4.4-dist/TomP2P-4.4/TomP2P-4.4-javadoc.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="D:/CU Boulder/F16-Sem3/DistributedSystems/Project/tomp2p/TomP2P-4.4-dist/TomP2P-4.4/TomP2P-4.4-sources.jar"/>
+        </jar>
+    </target>
+</project>
