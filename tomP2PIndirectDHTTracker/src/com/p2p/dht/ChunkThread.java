@@ -1,4 +1,4 @@
-package tomP2P;
+package com.p2p.dht;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;

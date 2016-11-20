@@ -1,4 +1,4 @@
-package tomP2P;
+package com.p2p.dht;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -44,12 +44,12 @@ import net.tomp2p.peers.Number160;
 import net.tomp2p.peers.PeerAddress;
 import net.tomp2p.storage.Data;
 import net.tomp2p.storage.TrackerData;
-public class ExampleSimple {
+public class Driver {
 
     final private Peer peer;
     public static final int CHUNK_SIZE = 1024;
 
-    public ExampleSimple(int peerId) throws Exception {
+    public Driver(int peerId) throws Exception {
         peer = new PeerMaker(Number160.createHash(peerId)).setPorts(4000 + peerId).makeAndListen();
         FutureBootstrap fb = peer.bootstrap().setBroadcast().setPorts(4001).start();
         fb.awaitUninterruptibly();
