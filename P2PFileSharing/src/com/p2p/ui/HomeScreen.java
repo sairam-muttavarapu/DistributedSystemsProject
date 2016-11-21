@@ -73,9 +73,12 @@ public class HomeScreen {
 		lblStatus.setBounds(102, 250, 417, 23);
 		lblStatus.setText("Status");
 		System.out.println("About to start 123123");
-		if("bootPeer".equalsIgnoreCase("bootPeer")){
-			P2PControllerBootPeer.MakePeer();
-		}else{
+		if(args.length > 0){
+			if(args[0].equalsIgnoreCase("bootPeer")){
+				P2PControllerBootPeer.MakePeer();
+			}
+		}
+		else{
 			P2PControllerClientPeer.MakePeer("abc@def.com");
 			shell.open();
 			shell.layout();
@@ -88,7 +91,6 @@ public class HomeScreen {
 				System.out.println("Shutting down Client");
 				P2PControllerClientPeer.KillPeer();
 			}
-		}
-		
+		}	
 	}
 }
