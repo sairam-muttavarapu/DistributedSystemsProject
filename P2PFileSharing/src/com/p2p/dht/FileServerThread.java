@@ -61,20 +61,20 @@ public class FileServerThread implements Runnable{
     				int partNumber = Integer.parseInt(msgClient.split("Part")[1]);
     				// Wrapping FileReader in BufferedReader.
     				BufferedReader bufferedReader = new BufferedReader(fileReader);	
-    				char[] cbuf = new char[Driver.CHUNK_SIZE];
+    				char[] cbuf = new char[P2PControllerBootPeer.CHUNK_SIZE];
     				Arrays.fill(cbuf, '\0');
     				
     				int chunkIndex = 0;
     				int numBytes = 0;
-    				bufferedReader.skip(partNumber*Driver.CHUNK_SIZE); // skipping parts not requested, seeking to the part requested
+    				bufferedReader.skip(partNumber*P2PControllerBootPeer.CHUNK_SIZE); // skipping parts not requested, seeking to the part requested
     				
-    				if((numBytes = bufferedReader.read(cbuf, 0, Driver.CHUNK_SIZE))!=-1){
+    				if((numBytes = bufferedReader.read(cbuf, 0, P2PControllerBootPeer.CHUNK_SIZE))!=-1){
     					//System.out.println("Bytes Num:"+numBytes);
     					//System.out.println("\nBytesRead:");
 
     					response = String.copyValueOf(cbuf,0,numBytes);
     					//System.out.println(cbufStr);
-    					cbuf = new char[Driver.CHUNK_SIZE];
+    					cbuf = new char[P2PControllerBootPeer.CHUNK_SIZE];
     					Arrays.fill(cbuf, '\0');
 
     					//System.out.println("\nIam hereeeee:");

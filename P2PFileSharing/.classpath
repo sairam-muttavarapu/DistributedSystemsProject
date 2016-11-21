@@ -13,5 +13,6 @@
 	<classpathentry kind="lib" path="D:/CU Boulder/F16-Sem3/DistributedSystems/Project/tomp2p/TomP2P-4.4-dist/TomP2P-4.4/TomP2P-4.4.jar"/>
 	<classpathentry kind="lib" path="D:/CU Boulder/F16-Sem3/DistributedSystems/Project/tomp2p/TomP2P-4.4-dist/TomP2P-4.4/TomP2P-4.4-javadoc.jar"/>
 	<classpathentry kind="lib" path="D:/CU Boulder/F16-Sem3/DistributedSystems/Project/tomp2p/TomP2P-4.4-dist/TomP2P-4.4/TomP2P-4.4-sources.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.eclipse.swt"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
