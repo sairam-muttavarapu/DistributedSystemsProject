@@ -28,6 +28,7 @@ public class HomeScreen {
 		txtFileName.setBounds(28, 35, 220, 23);
 		
 		CLabel lblStatus = new CLabel(shell, SWT.NONE);
+		lblStatus.setAlignment(SWT.CENTER);
 		
 		Button btnSearch = new Button(shell, SWT.NONE);
 		
@@ -50,11 +51,11 @@ public class HomeScreen {
 				}
 			}
 		});
-		btnSearch.setBounds(254, 33, 75, 25);
+		btnSearch.setBounds(254, 33, 81, 23);
 		btnSearch.setText("Search");
 		
 		Button btnDownload = new Button(shell, SWT.NONE);
-		btnDownload.setBounds(341, 33, 75, 25);
+		btnDownload.setBounds(341, 33, 111, 25);
 		btnDownload.setText("Download");
 		
 		Button btnSyncFiles = new Button(shell, SWT.NONE);
@@ -65,11 +66,11 @@ public class HomeScreen {
 			}
 		});
 		btnSyncFiles.setToolTipText("Share files in \"share\" folder");
-		btnSyncFiles.setBounds(428, 33, 75, 25);
+		btnSyncFiles.setBounds(458, 34, 90, 23);
 		btnSyncFiles.setText("Sync Files");
 		
 
-		lblStatus.setBounds(458, 250, 61, 21);
+		lblStatus.setBounds(102, 250, 417, 23);
 		lblStatus.setText("Status");
 		
 		if(args[0].equalsIgnoreCase("bootPeer")){
