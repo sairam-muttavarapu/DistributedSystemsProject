@@ -73,7 +73,7 @@ public class HomeScreen {
 		lblStatus.setBounds(102, 250, 417, 23);
 		lblStatus.setText("Status");
 		
-		if(args[0].equalsIgnoreCase("bootPeer")){
+		if("bootPeer".equalsIgnoreCase("bootPeer")){
 			P2PControllerBootPeer.MakePeer();
 		}else{
 			P2PControllerClientPeer.MakePeer("abc@def.com");
