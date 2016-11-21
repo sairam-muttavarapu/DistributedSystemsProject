@@ -72,7 +72,7 @@ public class HomeScreen {
 
 		lblStatus.setBounds(102, 250, 417, 23);
 		lblStatus.setText("Status");
-		System.out.println("About to start");
+		System.out.println("About to start 123123");
 		if("bootPeer".equalsIgnoreCase("bootPeer")){
 			P2PControllerBootPeer.MakePeer();
 		}else{
