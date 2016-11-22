@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
@@ -95,15 +96,19 @@ public class P2PControllerClientPeer {
      		File folder = new File("./download/tmp_"+searchFileName);
 			File[] listOfFiles = folder.listFiles();
 		
-			//System.out.println("Number of files in download folder: "+listOfFiles.length);
+			System.out.println("Number of files in download folder: "+listOfFiles.length);
 			PrintWriter combineFile = new PrintWriter("./download/"+searchFileName);
+			
+			
 			for(int i=0; i<listOfFiles.length; i++){
-				//System.out.println("FileName: "+listOfFiles[i].getName()+", FileSize: "+listOfFiles[i].length());
-				combineFile.print(new Scanner(listOfFiles[i].getName()).useDelimiter("\\Z").next()); // \\Z is endoffile delimiter 
-				//listOfFiles[i].delete(); // Deleting the tmp file part after writing into the actual file 
+				System.out.println("FileName: "+listOfFiles[i].getName()+", FileSize: "+listOfFiles[i].length());
+				File tmpFile = new File("./download/tmp_"+searchFileName+"/tmp_"+searchFileName+"_Part"+i);
+				combineFile.print(new Scanner(tmpFile).useDelimiter("\\Z").next()); // \\Z is endoffile delimiter 
+				//tmpFile.delete(); // Deleting the tmp file part after writing into the actual file
+				
 			}
 			combineFile.close();
-			//folder.delete();
+			//folder.delete(); // this will work only if the folder is empty
 			System.out.println("\n================= All Parts joined, FILE DOWNLOADED SUCCESSFULLY to download folder ==============");
 			System.out.println("\nChecking MD5SUM FILE INTEGRITY CHECK...");
 			
@@ -129,11 +134,11 @@ public class P2PControllerClientPeer {
  				md5SumChunkThread[i].Md5SumChunkThread.join();
      		}
  			
- 			File file = new File("./download/wiki.txt");
+ 			//File file = new File("./download/wiki.txt");
 			
  			//Iterating through hashmap to find if all the peers are valid
  			String tmpMd5Sum = "";
- 			Process proc = Runtime.getRuntime().exec("md5sum wiki.txt"); //"+file.getAbsolutePath());
+ 			Process proc = Runtime.getRuntime().exec("md5sum ./download/"+searchFileName); //"+file.getAbsolutePath());
      		BufferedReader in = new BufferedReader(new InputStreamReader(proc.getInputStream()));
      		String curMd5Sum = in.readLine().split(" ")[0];
      		System.out.println("Downloaded File's md5sum: "+curMd5Sum);

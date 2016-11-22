@@ -1,5 +1,6 @@
 package com.p2p.dht;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -9,6 +10,8 @@ import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Arrays;
+
+import javax.imageio.ImageIO;
 
 import net.tomp2p.futures.FutureDHT;
 import net.tomp2p.p2p.Peer;
@@ -49,8 +52,19 @@ public class FileServerThread implements Runnable{
 	            //System.out.println(in.readUTF());
 				
 				System.out.println("Client requested: "+msgClient);
-	            String response="";
-	            File file = new File("./share/"+msgClient.split("_")[0]);
+				
+				//String[] dotSplitArr = msgClient.split("_")[0].split(".");
+				//String fileExt = dotSplitArr[dotSplitArr.length-1];
+				
+				File file = new File("./share/"+msgClient.split("_")[0]);
+				
+				/*if(fileExt.equalsIgnoreCase("jpg") || fileExt.equalsIgnoreCase("png")){
+					BufferedImage image = ImageIO.read(file);
+					
+				}*/
+	            
+				String response="";
+
 	            
 				if(msgClient.contains("_Size")){
 					response = file.length()+"";
@@ -73,7 +87,7 @@ public class FileServerThread implements Runnable{
     					//System.out.println("\nBytesRead:");
 
     					response = String.copyValueOf(cbuf,0,numBytes);
-    					//System.out.println(cbufStr);
+    					System.out.println(response);
     					cbuf = new char[P2PControllerBootPeer.CHUNK_SIZE];
     					Arrays.fill(cbuf, '\0');
 
@@ -89,7 +103,7 @@ public class FileServerThread implements Runnable{
 				
 				DataOutputStream dataOutputStream = new DataOutputStream(connSocket.getOutputStream());
 				//System.out.println("Responding to the client");
-				dataOutputStream.writeBytes(response+"\n");
+				dataOutputStream.writeBytes(response);
 				connSocket.close();
 				//System.out.println("Responded to the client, HelloClient");
 				System.out.println("Successfully responded to the client\n");
@@ -98,7 +112,7 @@ public class FileServerThread implements Runnable{
 			//serverSocket.close();
 			
 		}catch(Exception e){
-			
+			e.printStackTrace();
 		}
 		
 	}	

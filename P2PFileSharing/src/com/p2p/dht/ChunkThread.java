@@ -45,9 +45,20 @@ public class ChunkThread implements Runnable{
 	 		System.out.println("Requesting Peer: "+trackerData.getPeerAddress().getInetAddress()+" for "+reqKey);
 	 		
 	 		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(client.getInputStream()));
-	 		String filePart = bufferedReader.readLine();
-	         
-	        //System.out.println("Server says " + filePart);
+	 		
+	 		char[] filePartCharArr = new char[P2PControllerBootPeer.CHUNK_SIZE];
+	 		int i = 0;
+	 		int tmpCharInt = 0;
+	 		while((tmpCharInt=bufferedReader.read()) != -1){
+	 			filePartCharArr[i]=(char)tmpCharInt;
+	 			
+	 			i++;
+	 		}
+	 		
+	 		//String filePart = String.copyValueOf(filePartCharArr);
+	 		String filePart = String.copyValueOf(filePartCharArr, 0, i);
+	 		
+	        System.out.println("Server says " + filePart);
 	        
 	 		client.close();
 	 		//System.out.println("fileName from reqKey: " + reqKey.split("_")[0]);
@@ -56,12 +67,13 @@ public class ChunkThread implements Runnable{
 	 			folder.mkdir();
 	 		}
 	 		
-	 		PrintWriter tmpFilePrintWriter = new PrintWriter("./download/tmp_"+reqKey.split("_")[0]+"/tmp_"+reqKey);
+	 		PrintWriter tmpFilePrintWriter = new PrintWriter("./download/tmp_"+reqKey.split("_")[0]+"/tmp_"+reqKey, "UTF8");
 	 		//tmpFilePrintWriter.print(trackerData.getPeerAddress()); // added for debug purpose only to check the provider for the fileChunk
 	 		tmpFilePrintWriter.print(filePart);
 	 		tmpFilePrintWriter.close();
 	 		
 		}catch (Exception e){
+			e.printStackTrace();
 			
 		}
 		
