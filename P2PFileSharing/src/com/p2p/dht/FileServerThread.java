@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
@@ -57,6 +58,8 @@ public class FileServerThread implements Runnable{
 				//String fileExt = dotSplitArr[dotSplitArr.length-1];
 				
 				File file = new File("./share/"+msgClient.split("_")[0]);
+				int chunkSize = P2PControllerBootPeer.CHUNK_SIZE;
+				
 				
 				/*if(fileExt.equalsIgnoreCase("jpg") || fileExt.equalsIgnoreCase("png")){
 					BufferedImage image = ImageIO.read(file);
@@ -65,45 +68,40 @@ public class FileServerThread implements Runnable{
 	            
 				String response="";
 
-	            
+				DataOutputStream dataOutputStream = new DataOutputStream(connSocket.getOutputStream());
+				
 				if(msgClient.contains("_Size")){
 					response = file.length()+"";
 					System.out.println("Responding to the client with fileSize...");
+					dataOutputStream.writeBytes(response);
+					
 				}else if(msgClient.contains("_Part")){
 					//FileReader reads text files in the default encoding.
-    				FileReader fileReader = new FileReader(file);
+    				
     				int partNumber = Integer.parseInt(msgClient.split("Part")[1]);
     				// Wrapping FileReader in BufferedReader.
-    				BufferedReader bufferedReader = new BufferedReader(fileReader);	
-    				char[] cbuf = new char[P2PControllerBootPeer.CHUNK_SIZE];
-    				Arrays.fill(cbuf, '\0');
     				
-    				int chunkIndex = 0;
-    				int numBytes = 0;
-    				bufferedReader.skip(partNumber*P2PControllerBootPeer.CHUNK_SIZE); // skipping parts not requested, seeking to the part requested
+    				FileInputStream fis = new FileInputStream(file);
     				
-    				if((numBytes = bufferedReader.read(cbuf, 0, P2PControllerBootPeer.CHUNK_SIZE))!=-1){
-    					//System.out.println("Bytes Num:"+numBytes);
-    					//System.out.println("\nBytesRead:");
-
-    					response = String.copyValueOf(cbuf,0,numBytes);
-    					System.out.println(response);
-    					cbuf = new char[P2PControllerBootPeer.CHUNK_SIZE];
-    					Arrays.fill(cbuf, '\0');
-
-    					//System.out.println("\nIam hereeeee:");
+    				chunkSize = ((chunkSize = ((int)file.length() - (partNumber*P2PControllerBootPeer.CHUNK_SIZE))) > P2PControllerBootPeer.CHUNK_SIZE) ? (P2PControllerBootPeer.CHUNK_SIZE): chunkSize;
+    				byte[] cbuf = new byte[chunkSize];
+    				
+    				fis.skip(partNumber*P2PControllerBootPeer.CHUNK_SIZE); // skipping parts not requested, seeking to the part requested
+    				
+    				if(fis.read(cbuf, 0, chunkSize) != -1){
+    					dataOutputStream.write(cbuf);
     				}
+    				
+    			
     				System.out.println("Responding to the client with filePart...");
 				}else if(msgClient.contains("_md5sum")){
 					Process p = Runtime.getRuntime().exec("md5sum "+file.getAbsolutePath());
              		BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
              		response = in.readLine().split(" ")[0];
              		System.out.println("Responding to the client with md5sum...");
+             		dataOutputStream.writeBytes(response);
 				}
 				
-				DataOutputStream dataOutputStream = new DataOutputStream(connSocket.getOutputStream());
-				//System.out.println("Responding to the client");
-				dataOutputStream.writeBytes(response);
 				connSocket.close();
 				//System.out.println("Responded to the client, HelloClient");
 				System.out.println("Successfully responded to the client\n");

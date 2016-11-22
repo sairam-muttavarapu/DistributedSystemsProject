@@ -3,6 +3,8 @@ package com.p2p.dht;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -56,6 +58,9 @@ public class P2PControllerClientPeer {
      		client.close();
      		
      		int fileSizeToDownload = Integer.parseInt(fileSize);
+     		int copyfileSizeToDownload = fileSizeToDownload;
+     		int chunkSize = CHUNK_SIZE;
+     		
      		
      		// Debug code to check iterating through available trackers for the file 
      		Iterator<TrackerData> iterator = futureTracker.getTrackers().iterator();
@@ -67,13 +72,15 @@ public class P2PControllerClientPeer {
      		
      		int partNumber = 0;
      		ChunkThread [] chunkThread = new ChunkThread[(fileSizeToDownload/CHUNK_SIZE)+1];
+     		int [] chunkSizeArray = new int[(fileSizeToDownload/CHUNK_SIZE)+1];
      		
      		while(fileSizeToDownload > 0){
      			iterator = futureTracker.getTrackers().iterator();
      			while(iterator.hasNext() && fileSizeToDownload > 0){
      				trackerData = iterator.next();
-     				
-     				chunkThread[partNumber] = new ChunkThread("chunkThread", trackerData, searchFileName+"_Part"+partNumber);
+     				chunkSize = ((chunkSize = (copyfileSizeToDownload - (partNumber*CHUNK_SIZE))) > CHUNK_SIZE) ? (CHUNK_SIZE): chunkSize;
+     				chunkSizeArray[partNumber] = chunkSize;
+     				chunkThread[partNumber] = new ChunkThread("chunkThread", trackerData, searchFileName+"_Part"+partNumber, chunkSize);
      				if(chunkThread[partNumber] != null)
      				{
      					chunkThread[partNumber].start();
@@ -97,17 +104,27 @@ public class P2PControllerClientPeer {
 			File[] listOfFiles = folder.listFiles();
 		
 			System.out.println("Number of files in download folder: "+listOfFiles.length);
-			PrintWriter combineFile = new PrintWriter("./download/"+searchFileName);
+			//PrintWriter combineFile = new PrintWriter("./download/"+searchFileName);
 			
+			// Deleting the existing file
+			File outputFile = new File("./download/"+searchFileName);
+			if(outputFile.exists()){
+				outputFile.delete();
+			}
 			
+			FileOutputStream combineFile = new FileOutputStream("./download/"+searchFileName, true);
 			for(int i=0; i<listOfFiles.length; i++){
 				System.out.println("FileName: "+listOfFiles[i].getName()+", FileSize: "+listOfFiles[i].length());
 				File tmpFile = new File("./download/tmp_"+searchFileName+"/tmp_"+searchFileName+"_Part"+i);
-				combineFile.print(new Scanner(tmpFile).useDelimiter("\\Z").next()); // \\Z is endoffile delimiter 
+				FileInputStream inputStream = new FileInputStream(tmpFile);
+				byte[] buf = new byte[chunkSizeArray[i]];
+				inputStream.read(buf, 0, chunkSizeArray[i]);
+				combineFile.write(buf);
 				//tmpFile.delete(); // Deleting the tmp file part after writing into the actual file
 				
 			}
 			combineFile.close();
+			
 			//folder.delete(); // this will work only if the folder is empty
 			System.out.println("\n================= All Parts joined, FILE DOWNLOADED SUCCESSFULLY to download folder ==============");
 			System.out.println("\nChecking MD5SUM FILE INTEGRITY CHECK...");

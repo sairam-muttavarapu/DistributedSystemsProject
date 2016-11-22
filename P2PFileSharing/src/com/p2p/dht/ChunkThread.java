@@ -3,6 +3,8 @@ package com.p2p.dht;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -14,12 +16,14 @@ public class ChunkThread implements Runnable{
 	private String threadName;
 	private TrackerData trackerData;
 	private String reqKey;
+	private int chunkSize;
 	
-	public ChunkThread(String _threadName, TrackerData _trackerData, String _reqKey) {
+	public ChunkThread(String _threadName, TrackerData _trackerData, String _reqKey, int _chunkSize) {
 		// TODO Auto-generated constructor stub
 		threadName = _threadName;
 		trackerData = _trackerData;
 		reqKey = _reqKey;
+		chunkSize = _chunkSize;
 		System.out.println("ThreadName: "+threadName);
 		//System.out.println("ThreadName: "+threadName);
 	}
@@ -44,33 +48,24 @@ public class ChunkThread implements Runnable{
 	 		
 	 		System.out.println("Requesting Peer: "+trackerData.getPeerAddress().getInetAddress()+" for "+reqKey);
 	 		
-	 		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(client.getInputStream()));
+	 		InputStream inputStream = client.getInputStream();
+	 		byte[] data = new byte[chunkSize];
 	 		
-	 		char[] filePartCharArr = new char[P2PControllerBootPeer.CHUNK_SIZE];
-	 		int i = 0;
-	 		int tmpCharInt = 0;
-	 		while((tmpCharInt=bufferedReader.read()) != -1){
-	 			filePartCharArr[i]=(char)tmpCharInt;
+	 		if(inputStream.read(data,0,chunkSize) != -1){
 	 			
-	 			i++;
+	 			//System.out.println("fileName from reqKey: " + reqKey.split("_")[0]);
+		 		File folder = new File("./download/tmp_"+reqKey.split("_")[0]);
+		 		if(!folder.exists()){
+		 			folder.mkdir();
+		 		}
+		 		
+		 		FileOutputStream outputStream = new FileOutputStream(new File("./download/tmp_"+reqKey.split("_")[0]+"/tmp_"+reqKey));
+		 		outputStream.write(data);
+		 		outputStream.close();
 	 		}
-	 		
-	 		//String filePart = String.copyValueOf(filePartCharArr);
-	 		String filePart = String.copyValueOf(filePartCharArr, 0, i);
-	 		
-	        System.out.println("Server says " + filePart);
-	        
+
+	        //System.out.println("Server says ");
 	 		client.close();
-	 		//System.out.println("fileName from reqKey: " + reqKey.split("_")[0]);
-	 		File folder = new File("./download/tmp_"+reqKey.split("_")[0]);
-	 		if(!folder.exists()){
-	 			folder.mkdir();
-	 		}
-	 		
-	 		PrintWriter tmpFilePrintWriter = new PrintWriter("./download/tmp_"+reqKey.split("_")[0]+"/tmp_"+reqKey, "UTF8");
-	 		//tmpFilePrintWriter.print(trackerData.getPeerAddress()); // added for debug purpose only to check the provider for the fileChunk
-	 		tmpFilePrintWriter.print(filePart);
-	 		tmpFilePrintWriter.close();
 	 		
 		}catch (Exception e){
 			e.printStackTrace();
