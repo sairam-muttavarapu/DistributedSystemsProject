@@ -1,23 +1,14 @@
 package com.p2p.dht;
 
-import java.awt.image.BufferedImage;
+
 import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Arrays;
 
-import javax.imageio.ImageIO;
-
-import net.tomp2p.futures.FutureDHT;
-import net.tomp2p.p2p.Peer;
-import net.tomp2p.peers.Number160;
-import net.tomp2p.storage.Data;
 
 public class FileServerThread implements Runnable{
 	private Thread serverThread;
@@ -91,6 +82,8 @@ public class FileServerThread implements Runnable{
     				if(fis.read(cbuf, 0, chunkSize) != -1){
     					dataOutputStream.write(cbuf);
     				}
+    				
+    				fis.close();
     				
     			
     				System.out.println("Responding to the client with filePart...");

@@ -6,12 +6,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.tomp2p.futures.FutureTracker;
@@ -116,10 +113,13 @@ public class P2PControllerClientPeer {
 			for(int i=0; i<listOfFiles.length; i++){
 				System.out.println("FileName: "+listOfFiles[i].getName()+", FileSize: "+listOfFiles[i].length());
 				File tmpFile = new File("./download/tmp_"+searchFileName+"/tmp_"+searchFileName+"_Part"+i);
+				
 				FileInputStream inputStream = new FileInputStream(tmpFile);
 				byte[] buf = new byte[chunkSizeArray[i]];
 				inputStream.read(buf, 0, chunkSizeArray[i]);
 				combineFile.write(buf);
+				inputStream.close();
+				
 				//tmpFile.delete(); // Deleting the tmp file part after writing into the actual file
 				
 			}
