@@ -13,6 +13,8 @@
 	<classpathentry kind="lib" path="lib/TomP2P-4.4-javadoc.jar"/>
 	<classpathentry kind="lib" path="lib/TomP2P-4.4-sources.jar"/>
 	<classpathentry kind="lib" path="lib/TomP2P-4.4.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/org.eclipse.swt"/>
+	<classpathentry kind="lib" path="email-lib/activation.jar"/>
+	<classpathentry kind="lib" path="email-lib/mail.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.eclipse.swt.Linux"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
