@@ -6,7 +6,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 
 import net.tomp2p.storage.TrackerData;
 
@@ -16,13 +19,15 @@ public class ChunkThread implements Runnable{
 	private TrackerData trackerData;
 	private String reqKey;
 	private long chunkSize;
+	private TrustFactorPlusIP peerTrustFactorDetails;
 	
-	public ChunkThread(String _threadName, TrackerData _trackerData, String _reqKey, long _chunkSize) {
+	public ChunkThread(String _threadName, TrackerData _trackerData, String _reqKey, long _chunkSize, TrustFactorPlusIP _peerTrustFactorDetails) {
 		// TODO Auto-generated constructor stub
 		threadName = _threadName;
 		trackerData = _trackerData;
 		reqKey = _reqKey;
 		chunkSize = _chunkSize;
+		peerTrustFactorDetails = _peerTrustFactorDetails;
 		System.out.println("ThreadName: "+threadName);
 		//System.out.println("ThreadName: "+threadName);
 	}
@@ -37,6 +42,9 @@ public class ChunkThread implements Runnable{
 	@Override
 	public void run() {
 		try{
+			
+			long startTime = System.currentTimeMillis();
+			  
 			// TODO Auto-generated method stub
 			Socket client = new Socket(trackerData.getPeerAddress().getInetAddress(), trackerData.getPeerAddress().portUDP()+1);
 	 		DataOutputStream dataOutputStream = new DataOutputStream(client.getOutputStream());
@@ -83,9 +91,9 @@ public class ChunkThread implements Runnable{
 		 				System.out.println("Inside proper chunks, numBytesRead: "+numBytesRead);
 		 				outputStream.write(chunkSizeBytes);
 		 			}*/
-		 				//System.out.println("Inside chunks, numBytesRead: "+numBytesRead);
-		 				byte[] chunkSizeBytesRead = Arrays.copyOf(chunkSizeBytes, numBytesRead);
-		 				outputStream.write(chunkSizeBytesRead);
+		 			//System.out.println("Inside chunks, numBytesRead: "+numBytesRead);
+	 				byte[] chunkSizeBytesRead = Arrays.copyOf(chunkSizeBytes, numBytesRead);
+	 				outputStream.write(chunkSizeBytesRead);
 
 			 		
 			 		//System.out.println("Leaving if condition");
@@ -99,6 +107,15 @@ public class ChunkThread implements Runnable{
 	 		
 	 		//Thread.sleep(100);
 	 		//client.close();
+	 		long endTime = System.currentTimeMillis();
+	 		long diffTime = endTime - startTime;
+	 		double downloadSpeed = ((double)(chunkSize*1000)/(double)(diffTime));
+	 		System.out.println("StartTime: "+startTime);
+	 		System.out.println("EndTime: "+endTime);
+	 		System.out.println("DiffTime: "+diffTime);
+	 		System.out.println("DownloadSpeed for "+reqKey+ ", chunkSize: "+chunkSize+" :::"+ downloadSpeed);
+	 		
+	 		peerTrustFactorDetails.getDownloadSpeedList().add(downloadSpeed);
 	 		
 		}catch (Exception e){
 			e.printStackTrace();

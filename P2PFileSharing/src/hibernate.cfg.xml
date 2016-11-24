@@ -29,5 +29,7 @@
     <!-- Drop and re-create the database schema on startup -->
     <property name="hbm2ddl.auto">update</property>
     <mapping class="com.p2p.utils.UserDetails"/>
+    <mapping class="com.p2p.utils.TrustFactorDetails"/>
+    <mapping class="com.p2p.utils.UserEmailIP"/>
   </session-factory>
 </hibernate-configuration>

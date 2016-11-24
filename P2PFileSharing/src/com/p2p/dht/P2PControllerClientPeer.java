@@ -8,8 +8,19 @@ import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
+
+import com.p2p.utils.TrustFactorDetails;
+import com.p2p.utils.UserDetails;
+import com.p2p.utils.UserEmailIP;
 
 import net.tomp2p.futures.FutureTracker;
 import net.tomp2p.futures.FutureBootstrap;
@@ -152,10 +163,231 @@ public class P2PControllerClientPeer{
      			partNumber++;
      		}*/
      		
+     		//Session Begin
+     		SessionFactory sessionFactory = new Configuration().configure().buildSessionFactory();
+			Session session = sessionFactory.openSession();
+			session.beginTransaction();
+			
+     		iterator = futureTracker.getTrackers().iterator();
+     		int numOfFilePeers = futureTracker.getTrackers().size();
      		
+     		ArrayList<TrustFactorPlusIP> trustFactorPlusIPArrayList = new ArrayList<TrustFactorPlusIP>();
      		
-     		int numThreads = 0;
-      	    int partNum = 0;
+  			while(iterator.hasNext() && fileSizeToDownload > 0){
+  				trackerData = iterator.next();
+				String ipaddress = trackerData.getPeerAddress().getInetAddress().toString().split("/")[1];
+				System.out.println("ipaddress plain: "+trackerData.getPeerAddress().getInetAddress().toString());
+				System.out.println("ipaddress 0: "+trackerData.getPeerAddress().getInetAddress().toString().split("/")[0]);
+				System.out.println("ipaddress 1: "+trackerData.getPeerAddress().getInetAddress().toString().split("/")[1]);
+				System.out.println("ipaddress retrieved: "+ipaddress);
+				UserEmailIP getUserEmailIP = new UserEmailIP();
+				getUserEmailIP = session.get(com.p2p.utils.UserEmailIP.class, ipaddress);
+				String emailId = getUserEmailIP.getEmail();
+				
+				TrustFactorDetails getTrustFactorDetails = new TrustFactorDetails();
+				getTrustFactorDetails = session.get(com.p2p.utils.TrustFactorDetails.class, emailId);
+				
+				int trustFactor = Integer.parseInt(getTrustFactorDetails.getTrustFactor());
+				int numTransactions = Integer.parseInt(getTrustFactorDetails.getNumTransactions());
+				ArrayList<Double> downloadSpeedList = new ArrayList<Double>();
+				trustFactorPlusIPArrayList.add(new TrustFactorPlusIP(trustFactor, numTransactions, emailId, trackerData, downloadSpeedList));
+  			}
+
+  			//Session close
+  			session.close();
+			sessionFactory.close();
+  			
+  			Collections.sort(trustFactorPlusIPArrayList);
+  			
+  			ArrayList<TrustFactorPlusIP> bestPeersList = new ArrayList<TrustFactorPlusIP>();
+  			ArrayList<TrustFactorPlusIP> goodPeersList = new ArrayList<TrustFactorPlusIP>();
+  			ArrayList<TrustFactorPlusIP> badPeersList = new ArrayList<TrustFactorPlusIP>();
+  			
+  			for(TrustFactorPlusIP trustFactorPlusIP : trustFactorPlusIPArrayList){
+  				if(trustFactorPlusIP.getTrustFactor() >= 7){
+  					bestPeersList.add(trustFactorPlusIP);
+  				}else if(trustFactorPlusIP.getTrustFactor() >=3 && trustFactorPlusIP.getTrustFactor() < 7 ){
+  					goodPeersList.add(trustFactorPlusIP);
+  				}else if(trustFactorPlusIP.getTrustFactor() > 1 && trustFactorPlusIP.getTrustFactor() < 3){
+  					badPeersList.add(trustFactorPlusIP);
+  				}
+  			}
+  			
+  			
+  			int numOfChunksFromBestPeers = (int)(0.6*numOfChunksToDownload);
+	  		int numOfChunksFromGoodPeers = (int)(0.3*numOfChunksToDownload);
+	  		int numOfChunksFromBadPeers = numOfChunksToDownload - numOfChunksFromBestPeers - numOfChunksFromGoodPeers;
+  			long fileSizeDownloaded;
+  			long fileSizeRemaining;
+    		int numThreads = 0;
+    		int partNum = 0;
+    		
+	  		
+    		if(bestPeersList.size() != 0 && goodPeersList.size() == 0 && badPeersList.size() == 0){
+  	  			//Only Best Peers there
+    			numOfChunksFromBestPeers = numOfChunksToDownload;
+  				numOfChunksFromGoodPeers = 0;
+  				numOfChunksFromBadPeers = 0;
+  			}else if(bestPeersList.size() == 0 && goodPeersList.size() != 0 && badPeersList.size() == 0){
+  				// Only Good Peers there
+  				numOfChunksFromBestPeers = 0;
+  				numOfChunksFromGoodPeers = numOfChunksToDownload;
+  				numOfChunksFromBadPeers = 0;
+  			}else if(bestPeersList.size() == 0 && goodPeersList.size() == 0 && badPeersList.size() != 0){
+  			    // Only Bad Peers there
+  				numOfChunksFromBestPeers = 0;
+  				numOfChunksFromGoodPeers = 0;
+  				numOfChunksFromBadPeers = numOfChunksToDownload;
+  			}else if(bestPeersList.size() == 0 && goodPeersList.size() != 0 && badPeersList.size() != 0){
+  			    // Only Good, Bad Peers there
+  				numOfChunksFromBestPeers = 0;
+  				numOfChunksFromGoodPeers = (int)(0.9*numOfChunksToDownload);
+  				numOfChunksFromBadPeers = numOfChunksToDownload - numOfChunksFromGoodPeers;
+  			}else if(bestPeersList.size() != 0 && goodPeersList.size() == 0 && badPeersList.size() != 0){
+  				// Only Best, Bad Peers there
+  				numOfChunksFromBestPeers = (int)(0.9*numOfChunksToDownload);
+  				numOfChunksFromGoodPeers = 0;
+  				numOfChunksFromBadPeers = numOfChunksToDownload - numOfChunksFromBestPeers;
+  			}else if(bestPeersList.size() != 0 && goodPeersList.size() != 0 && badPeersList.size() == 0){
+  			   // Only Best, Good Peers there
+  				numOfChunksFromBestPeers = (int)(0.6*numOfChunksToDownload);
+  				numOfChunksFromGoodPeers = numOfChunksToDownload - numOfChunksFromBestPeers;
+  				numOfChunksFromBadPeers = 0;
+  			}else if(bestPeersList.size() != 0 && goodPeersList.size() != 0 && badPeersList.size() != 0){
+  	  			//Best, Good, Bad peers are there
+  				numOfChunksFromBestPeers = (int)(0.6*numOfChunksToDownload);
+  		  		numOfChunksFromGoodPeers = (int)(0.3*numOfChunksToDownload);
+  		  		numOfChunksFromBadPeers = numOfChunksToDownload - numOfChunksFromBestPeers - numOfChunksFromGoodPeers;
+  			}
+  			
+    		
+  			while(numOfChunksFromBestPeers > 0){
+  				for(TrustFactorPlusIP bestPeer : bestPeersList){
+  					System.out.println("I am a Best Peer");
+  					
+      				if(copyfileSizeToDownload > FILE_HUNDRED_MB){
+      					if(numThreads == 3){
+          					while(partNum < partNumber){
+          		     			chunkThread[partNum].chunkThread.join();
+          		     			//System.out.println("\npartNum: "+ partNum+"\n");
+          		     			partNum++;
+          		     		}
+          					numThreads = 0;
+          				}
+      				}
+  	  				
+  					fileSizeDownloaded = partNumber*CHUNK_SIZE_DOWNLOAD;
+      				fileSizeRemaining = copyfileSizeToDownload - fileSizeDownloaded;
+      				System.out.println(partNumber+" Actual FileSize: "+ copyfileSizeToDownload);
+      				System.out.println(partNumber+" FileSize Downloaded: "+ fileSizeDownloaded);
+      				
+      				System.out.println(partNumber+" FileSize Remaining: "+ fileSizeRemaining);
+      				
+      				// If fileSizeRemaining is greater than CHUNK_SIZE_DOWNLOAD, then retain CHUNK_SIZE_DOWNLOAD
+      				// If it is the last chunk, fileSizeRemaining will be less than set CHUNK_SIZE_DOWNLOAD, so using fileSizeRemaining for the last chunk
+      				chunkSize = (fileSizeRemaining > CHUNK_SIZE_DOWNLOAD) ? (CHUNK_SIZE_DOWNLOAD): fileSizeRemaining;
+      				
+      				System.out.println(partNumber+" ClientPeer: ChunkSize: "+ chunkSize);
+      				chunkSizeArray[partNumber] = chunkSize;
+      				
+      				chunkThread[partNumber] = new ChunkThread("chunkThread", bestPeer.getTrackerData(), searchFileName+"_Part"+partNumber, chunkSize, bestPeer);
+      				if(chunkThread[partNumber] != null)
+      				{
+      					chunkThread[partNumber].start();
+      				}
+      				
+      				fileSizeToDownload -= chunkSize;
+      				numThreads++;
+  					partNumber++;
+  					numOfChunksFromBestPeers--;
+  	  			}
+  			}
+  			
+  			
+  			while(numOfChunksFromGoodPeers > 0){
+  				for(TrustFactorPlusIP goodPeer : goodPeersList){
+  					System.out.println("I am a Good Peer");
+  					
+      				if(copyfileSizeToDownload > FILE_HUNDRED_MB){
+      					if(numThreads == 3){
+          					while(partNum < partNumber){
+          		     			chunkThread[partNum].chunkThread.join();
+          		     			//System.out.println("\npartNum: "+ partNum+"\n");
+          		     			partNum++;
+          		     		}
+          					numThreads = 0;
+          				}
+      				}
+      				
+  					
+  					fileSizeDownloaded = partNumber*CHUNK_SIZE_DOWNLOAD;
+      				fileSizeRemaining = copyfileSizeToDownload - fileSizeDownloaded;
+      				System.out.println(partNumber+" Actual FileSize: "+ copyfileSizeToDownload);
+      				System.out.println(partNumber+" FileSize Downloaded: "+ fileSizeDownloaded);
+      				
+      				System.out.println(partNumber+" FileSize Remaining: "+ fileSizeRemaining);
+      				
+      				// If fileSizeRemaining is greater than CHUNK_SIZE_DOWNLOAD, then retain CHUNK_SIZE_DOWNLOAD
+      				// If it is the last chunk, fileSizeRemaining will be less than set CHUNK_SIZE_DOWNLOAD, so using fileSizeRemaining for the last chunk
+      				chunkSize = (fileSizeRemaining > CHUNK_SIZE_DOWNLOAD) ? (CHUNK_SIZE_DOWNLOAD): fileSizeRemaining;
+      				
+      				System.out.println(partNumber+" ClientPeer: ChunkSize: "+ chunkSize);
+      				chunkSizeArray[partNumber] = chunkSize;
+      				
+      				chunkThread[partNumber] = new ChunkThread("chunkThread", goodPeer.getTrackerData(), searchFileName+"_Part"+partNumber, chunkSize, goodPeer);
+      				if(chunkThread[partNumber] != null)
+      				{
+      					chunkThread[partNumber].start();
+      				}
+      				fileSizeToDownload -= chunkSize;
+      				numThreads++;
+  					partNumber++;
+  					numOfChunksFromGoodPeers--;
+  	  			}
+  			}
+
+  			while(numOfChunksFromBadPeers > 0){
+  				for(TrustFactorPlusIP badPeer : badPeersList){
+  					System.out.println("I am a Bad Peer");
+  	 				if(copyfileSizeToDownload > FILE_HUNDRED_MB){
+      					if(numThreads == 3){
+          					while(partNum < partNumber){
+          		     			chunkThread[partNum].chunkThread.join();
+          		     			//System.out.println("\npartNum: "+ partNum+"\n");
+          		     			partNum++;
+          		     		}
+          					numThreads = 0;
+          				}
+      				}
+  	 				
+  					fileSizeDownloaded = partNumber*CHUNK_SIZE_DOWNLOAD;
+      				fileSizeRemaining = copyfileSizeToDownload - fileSizeDownloaded;
+      				System.out.println(partNumber+" Actual FileSize: "+ copyfileSizeToDownload);
+      				System.out.println(partNumber+" FileSize Downloaded: "+ fileSizeDownloaded);
+      				
+      				System.out.println(partNumber+" FileSize Remaining: "+ fileSizeRemaining);
+      				
+      				// If fileSizeRemaining is greater than CHUNK_SIZE_DOWNLOAD, then retain CHUNK_SIZE_DOWNLOAD
+      				// If it is the last chunk, fileSizeRemaining will be less than set CHUNK_SIZE_DOWNLOAD, so using fileSizeRemaining for the last chunk
+      				chunkSize = (fileSizeRemaining > CHUNK_SIZE_DOWNLOAD) ? (CHUNK_SIZE_DOWNLOAD): fileSizeRemaining;
+      				
+      				System.out.println(partNumber+" ClientPeer: ChunkSize: "+ chunkSize);
+      				chunkSizeArray[partNumber] = chunkSize;
+      				
+      				chunkThread[partNumber] = new ChunkThread("chunkThread", badPeer.getTrackerData(), searchFileName+"_Part"+partNumber, chunkSize, badPeer);
+      				if(chunkThread[partNumber] != null)
+      				{
+      					chunkThread[partNumber].start();
+      				}
+      				fileSizeToDownload -= chunkSize;
+      				numThreads++;
+  					partNumber++;
+  					numOfChunksFromBadPeers--;
+  	  			}
+  			}
+     	
+     		/*numThreads = 0;
+      	    partNum = 0;
       		while(fileSizeToDownload > 0){
       			iterator = futureTracker.getTrackers().iterator();
       			while(iterator.hasNext() && fileSizeToDownload > 0){
@@ -172,8 +404,8 @@ public class P2PControllerClientPeer{
       				}
       				
       				trackerData = iterator.next();
-      				long fileSizeDownloaded = partNumber*CHUNK_SIZE_DOWNLOAD;
-      				long fileSizeRemaining = copyfileSizeToDownload - fileSizeDownloaded;
+      				fileSizeDownloaded = partNumber*CHUNK_SIZE_DOWNLOAD;
+      				fileSizeRemaining = copyfileSizeToDownload - fileSizeDownloaded;
       				System.out.println(partNumber+" Actual FileSize: "+ copyfileSizeToDownload);
       				System.out.println(partNumber+" FileSize Downloaded: "+ fileSizeDownloaded);
       				
@@ -195,7 +427,7 @@ public class P2PControllerClientPeer{
       				partNumber++;
       				numThreads++;
       			}
-      		}
+      		}*/
       		
       		partNum = 0;
       		while(partNum < numOfChunksToDownload){
