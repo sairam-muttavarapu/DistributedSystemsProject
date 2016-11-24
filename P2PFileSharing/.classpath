@@ -15,6 +15,23 @@
 	<classpathentry kind="lib" path="lib/TomP2P-4.4.jar"/>
 	<classpathentry kind="lib" path="email-lib/activation.jar"/>
 	<classpathentry kind="lib" path="email-lib/mail.jar"/>
+	<classpathentry kind="lib" path="hibernate-lib/antlr-2.7.7.jar"/>
+	<classpathentry kind="lib" path="hibernate-lib/cdi-api-1.1.jar"/>
+	<classpathentry kind="lib" path="hibernate-lib/classmate-1.3.0.jar"/>
+	<classpathentry kind="lib" path="hibernate-lib/dom4j-1.6.1.jar"/>
+	<classpathentry kind="lib" path="hibernate-lib/el-api-2.2.jar"/>
+	<classpathentry kind="lib" path="hibernate-lib/geronimo-jta_1.1_spec-1.1.1.jar"/>
+	<classpathentry kind="lib" path="hibernate-lib/hibernate-commons-annotations-5.0.1.Final.jar"/>
+	<classpathentry kind="lib" path="hibernate-lib/hibernate-core-5.2.4.Final.jar"/>
+	<classpathentry kind="lib" path="hibernate-lib/hibernate-jpa-2.1-api-1.0.0.Final.jar"/>
+	<classpathentry kind="lib" path="hibernate-lib/hibernate-jpamodelgen-5.2.4.Final.jar"/>
+	<classpathentry kind="lib" path="hibernate-lib/jandex-2.0.0.Final.jar"/>
+	<classpathentry kind="lib" path="hibernate-lib/javassist-3.20.0-GA.jar"/>
+	<classpathentry kind="lib" path="hibernate-lib/javax.inject-1.jar"/>
+	<classpathentry kind="lib" path="hibernate-lib/jboss-interceptors-api_1.1_spec-1.0.0.Beta1.jar"/>
+	<classpathentry kind="lib" path="hibernate-lib/jboss-logging-3.3.0.Final.jar"/>
+	<classpathentry kind="lib" path="hibernate-lib/jsr250-api-1.0.jar"/>
+	<classpathentry kind="lib" path="hibernate-lib/mysql-connector-java-5.1.40-bin.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/org.eclipse.swt.Linux"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

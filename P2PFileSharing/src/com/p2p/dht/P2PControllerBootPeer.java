@@ -7,7 +7,6 @@ import net.tomp2p.peers.Number160;
 public class P2PControllerBootPeer {
 
     private static Peer peer = null;
-    public static final int CHUNK_SIZE = 1024;
 
     public P2PControllerBootPeer()  {
         

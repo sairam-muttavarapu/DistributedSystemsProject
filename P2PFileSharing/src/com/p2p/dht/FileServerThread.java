@@ -8,6 +8,7 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Arrays;
 
 
 public class FileServerThread implements Runnable{
@@ -37,6 +38,7 @@ public class FileServerThread implements Runnable{
 			while(true){
 				System.out.println("\nWaiting for socket client connection");
 				Socket connSocket = serverSocket.accept();
+				
 				System.out.println("Accepted socket client connection from "+connSocket.getRemoteSocketAddress().toString());
 				BufferedReader recvBuffReader = new BufferedReader(new InputStreamReader(connSocket.getInputStream()));
 				String msgClient = recvBuffReader.readLine();
@@ -49,7 +51,22 @@ public class FileServerThread implements Runnable{
 				//String fileExt = dotSplitArr[dotSplitArr.length-1];
 				
 				File file = new File("./share/"+msgClient.split("_")[0]);
-				int chunkSize = P2PControllerBootPeer.CHUNK_SIZE;
+				
+				
+				long fileSizeToUpload = file.length();
+				
+				if(fileSizeToUpload > P2PControllerClientPeer.FILE_ZERO_KB && fileSizeToUpload <= P2PControllerClientPeer.FILE_ONE_MB){
+					P2PControllerClientPeer.CHUNK_SIZE_UPLOAD = P2PControllerClientPeer.CHUNK_ONE_KB;
+	     		}else if(fileSizeToUpload > P2PControllerClientPeer.FILE_ONE_MB && fileSizeToUpload <= P2PControllerClientPeer.FILE_HUNDRED_MB){
+	     			P2PControllerClientPeer.CHUNK_SIZE_UPLOAD = P2PControllerClientPeer.CHUNK_ONE_MB;
+	     		}else if(fileSizeToUpload > P2PControllerClientPeer.FILE_HUNDRED_MB && fileSizeToUpload <= P2PControllerClientPeer.FILE_ONE_GB){
+	     			P2PControllerClientPeer.CHUNK_SIZE_UPLOAD = P2PControllerClientPeer.CHUNK_FIFTY_MB;
+	     		}else if(fileSizeToUpload > P2PControllerClientPeer.FILE_ONE_GB){
+	     			P2PControllerClientPeer.CHUNK_SIZE_UPLOAD = P2PControllerClientPeer.CHUNK_HUNDRED_MB;
+	     		}
+				
+				long chunkSize = P2PControllerClientPeer.CHUNK_SIZE_UPLOAD;
+				
 				
 				
 				/*if(fileExt.equalsIgnoreCase("jpg") || fileExt.equalsIgnoreCase("png")){
@@ -60,9 +77,10 @@ public class FileServerThread implements Runnable{
 				String response="";
 
 				DataOutputStream dataOutputStream = new DataOutputStream(connSocket.getOutputStream());
+				FileInputStream fis = new FileInputStream(file);
 				
 				if(msgClient.contains("_Size")){
-					response = file.length()+"";
+					response = fileSizeToUpload+"";
 					System.out.println("Responding to the client with fileSize...");
 					dataOutputStream.writeBytes(response);
 					
@@ -72,18 +90,44 @@ public class FileServerThread implements Runnable{
     				int partNumber = Integer.parseInt(msgClient.split("Part")[1]);
     				// Wrapping FileReader in BufferedReader.
     				
-    				FileInputStream fis = new FileInputStream(file);
+    				System.out.println("FileServerThread FileSize: "+file.length());
     				
-    				chunkSize = ((chunkSize = ((int)file.length() - (partNumber*P2PControllerBootPeer.CHUNK_SIZE))) > P2PControllerBootPeer.CHUNK_SIZE) ? (P2PControllerBootPeer.CHUNK_SIZE): chunkSize;
-    				byte[] cbuf = new byte[chunkSize];
+    				//P2PControllerClientPeer.CHUNK_SIZE_UPLOAD = file.length()/(long)1000;
     				
-    				fis.skip(partNumber*P2PControllerBootPeer.CHUNK_SIZE); // skipping parts not requested, seeking to the part requested
+    				long fileSizeUploaded = partNumber*P2PControllerClientPeer.CHUNK_SIZE_UPLOAD;
+     				long fileSizeRemaining = fileSizeToUpload - fileSizeUploaded;
+     				System.out.println("Actual FileSize: "+ fileSizeToUpload);
+     				System.out.println("FileSize Uploaded: "+ fileSizeUploaded);
+     				
+     				System.out.println("FileSize Remaining: "+ fileSizeRemaining);
+     				
+     				// If fileSizeRemaining is greater than CHUNK_SIZE_UPLOAD, then retain CHUNK_SIZE_UPLOAD
+     				// If it is the last chunk, fileSizeRemaining will be less than set CHUNK_SIZE_UPLOAD, so using fileSizeRemaining for the last chunk
+     				chunkSize = (fileSizeRemaining > P2PControllerClientPeer.CHUNK_SIZE_UPLOAD) ? (P2PControllerClientPeer.CHUNK_SIZE_UPLOAD): fileSizeRemaining; 
+     				System.out.println("chunkSize: "+ chunkSize);
+     				fis.skip(partNumber*P2PControllerClientPeer.CHUNK_SIZE_UPLOAD); // skipping parts not requested, seeking to the part requested
+     				
+     				byte[] chunkSizeBytes = new byte[(int)chunkSize];
+     				int numBytesRead = 0;
     				
-    				if(fis.read(cbuf, 0, chunkSize) != -1){
-    					dataOutputStream.write(cbuf);
+    				if((numBytesRead = fis.read(chunkSizeBytes)) != -1){
+    					
+    		 			/*if(numBytesRead < chunkSize){
+    		 				System.out.println("Inside small chunks, numBytesRead: "+numBytesRead);
+    		 				byte[] chunkSizeBytesRead = Arrays.copyOf(chunkSizeBytes, numBytesRead);
+    	    				dataOutputStream.write(chunkSizeBytesRead);
+    	    				
+    		 			}else{
+    		 				System.out.println("Inside proper chunks, numBytesRead: "+numBytesRead);
+    		 				dataOutputStream.write(chunkSizeBytes);
+    		 			}*/
+    		 			System.out.println("Inside chunks, numBytesRead: "+numBytesRead);
+    		 			byte[] chunkSizeBytesRead = Arrays.copyOf(chunkSizeBytes, numBytesRead);
+	    				dataOutputStream.write(chunkSizeBytesRead);
+
     				}
     				
-    				fis.close();
+    				//fis.close();
     				
     			
     				System.out.println("Responding to the client with filePart...");
@@ -94,7 +138,8 @@ public class FileServerThread implements Runnable{
              		System.out.println("Responding to the client with md5sum...");
              		dataOutputStream.writeBytes(response);
 				}
-				
+				//Thread.sleep(100);
+				fis.close();
 				connSocket.close();
 				//System.out.println("Responded to the client, HelloClient");
 				System.out.println("Successfully responded to the client\n");

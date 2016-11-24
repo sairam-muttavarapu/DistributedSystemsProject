@@ -20,8 +20,23 @@ public class EmailUtil {
 		InputStream input;
 		Properties prop = new Properties();
 		try {
-			input = new FileInputStream("emailConfig.properties");
-			prop.load(input);
+			//input = new FileInputStream("emailConfig.Properties");
+			//input = EmailUtil.class.getResourceAsStream("/emailConfig.Properties");
+			input = EmailUtil.class.getResourceAsStream("/hibernate.cfg.xml");
+			
+			if(input == null){
+				System.out.println("input file is not empty");
+			}
+			
+			prop.setProperty("mail.smtp.host", "smtp.gmail.com");
+			prop.setProperty("mail.smtp.socketFactory.port", "465");
+			prop.setProperty("mail.smtp.socketFactory.class","javax.net.ssl.SSLSocketFactory");
+			prop.setProperty("mail.smtp.auth","true");
+			prop.setProperty("mail.smtp.port","465");
+			prop.setProperty("emailId", "sint.devteam@gmail.com");
+			prop.setProperty("password","@cu4distsys");
+			
+			//prop.load(input);
 
 			System.out.println("EmailId:"+prop.getProperty("emailId"));
 			

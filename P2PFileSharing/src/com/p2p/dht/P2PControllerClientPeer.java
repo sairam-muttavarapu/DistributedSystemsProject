@@ -18,10 +18,21 @@ import net.tomp2p.p2p.PeerMaker;
 import net.tomp2p.peers.Number160;
 import net.tomp2p.peers.PeerAddress;
 import net.tomp2p.storage.TrackerData;
-public class P2PControllerClientPeer {
+public class P2PControllerClientPeer{
 
     private static Peer another;
-    public static final int CHUNK_SIZE = 1024;
+    public static long CHUNK_SIZE_DOWNLOAD = 1024;
+    public static long CHUNK_SIZE_UPLOAD = 1024;
+    
+    public static final long FILE_ZERO_KB = 0;
+    public static final long FILE_ONE_MB = 1*1024*1024;
+    public static final long FILE_HUNDRED_MB = 100*1024*1024;
+    public static final long FILE_ONE_GB = 1000*1024*1024;
+    
+    public static final long CHUNK_ONE_KB = 1*1024;
+    public static final long CHUNK_ONE_MB = 1*1024*1024;
+    public static final long CHUNK_FIFTY_MB = 50*1024*1024;
+    public static final long CHUNK_HUNDRED_MB = 50*1024*1024;
 
 
     public P2PControllerClientPeer(){
@@ -54,9 +65,12 @@ public class P2PControllerClientPeer {
      		//System.out.println("FileSize Msg From Server: "+msgServer);
      		client.close();
      		
-     		int fileSizeToDownload = Integer.parseInt(fileSize);
-     		int copyfileSizeToDownload = fileSizeToDownload;
-     		int chunkSize = CHUNK_SIZE;
+     		Long.parseLong(fileSize);
+     		long fileSizeToDownload = Long.parseLong(fileSize);
+     		
+     		
+     		long copyfileSizeToDownload = fileSizeToDownload;
+     		long chunkSize = CHUNK_SIZE_DOWNLOAD;
      		
      		
      		// Debug code to check iterating through available trackers for the file 
@@ -67,32 +81,128 @@ public class P2PControllerClientPeer {
      		
      		//another.
      		
-     		int partNumber = 0;
-     		ChunkThread [] chunkThread = new ChunkThread[(fileSizeToDownload/CHUNK_SIZE)+1];
-     		int [] chunkSizeArray = new int[(fileSizeToDownload/CHUNK_SIZE)+1];
+     		if(fileSizeToDownload > FILE_ZERO_KB && fileSizeToDownload <= FILE_ONE_MB){
+     			CHUNK_SIZE_DOWNLOAD = CHUNK_ONE_KB;
+     		}else if(fileSizeToDownload > FILE_ONE_MB && fileSizeToDownload <= FILE_HUNDRED_MB){
+     			CHUNK_SIZE_DOWNLOAD = CHUNK_ONE_MB;
+     		}else if(fileSizeToDownload > FILE_HUNDRED_MB && fileSizeToDownload <= FILE_ONE_GB){
+     			CHUNK_SIZE_DOWNLOAD = CHUNK_FIFTY_MB;
+     		}else if(fileSizeToDownload > FILE_ONE_GB){
+     			CHUNK_SIZE_DOWNLOAD = CHUNK_HUNDRED_MB;
+     		}
      		
+     		
+     		int partNumber = 0;
+     		
+     		int numOfChunksToDownload = (int)((fileSizeToDownload/CHUNK_SIZE_DOWNLOAD)+1);
+     		
+     		ChunkThread [] chunkThread = new ChunkThread[numOfChunksToDownload];
+     		long [] chunkSizeArray = new long[numOfChunksToDownload];
+     		
+     		System.out.println("ClientPeer: fileSizeToDownload: "+ fileSizeToDownload);
+     		System.out.println("ClientPeer: CHUNK_SIZE_DOWNLOAD: "+ CHUNK_SIZE_DOWNLOAD);
+     		System.out.println("ClientPeer: no. of chunks: "+ ((fileSizeToDownload/CHUNK_SIZE_DOWNLOAD)+1));
+     		System.out.println("ClientPeer: no. of chunks(with int typecast): "+ numOfChunksToDownload);
+     		
+     	   /*//int numThreads = 0;
+     	   //int partNum = 0;
      		while(fileSizeToDownload > 0){
      			iterator = futureTracker.getTrackers().iterator();
      			while(iterator.hasNext() && fileSizeToDownload > 0){
+     				
+     				/*if(numThreads == 100){
+     					while(partNum < partNumber){
+     		     			chunkThread[partNum].chunkThread.join();
+     		     			//System.out.println("\npartNum: "+ partNum+"\n");
+     		     			partNum++;
+     		     		}
+     					numThreads = 0;
+     				}//
+     				
      				trackerData = iterator.next();
-     				chunkSize = ((chunkSize = (copyfileSizeToDownload - (partNumber*CHUNK_SIZE))) > CHUNK_SIZE) ? (CHUNK_SIZE): chunkSize;
+     				long fileSizeDownloaded = partNumber*CHUNK_SIZE_DOWNLOAD;
+     				long fileSizeRemaining = copyfileSizeToDownload - fileSizeDownloaded;
+     				System.out.println(partNumber+" Actual FileSize: "+ copyfileSizeToDownload);
+     				System.out.println(partNumber+" FileSize Downloaded: "+ fileSizeDownloaded);
+     				
+     				System.out.println(partNumber+" FileSize Remaining: "+ fileSizeRemaining);
+     				
+     				// If fileSizeRemaining is greater than CHUNK_SIZE_DOWNLOAD, then retain CHUNK_SIZE_DOWNLOAD
+     				// If it is the last chunk, fileSizeRemaining will be less than set CHUNK_SIZE_DOWNLOAD, so using fileSizeRemaining for the last chunk
+     				chunkSize = (fileSizeRemaining > CHUNK_SIZE_DOWNLOAD) ? (CHUNK_SIZE_DOWNLOAD): fileSizeRemaining;
+     				
+     				System.out.println(partNumber+" ClientPeer: ChunkSize: "+ chunkSize);
      				chunkSizeArray[partNumber] = chunkSize;
+     				
      				chunkThread[partNumber] = new ChunkThread("chunkThread", trackerData, searchFileName+"_Part"+partNumber, chunkSize);
      				if(chunkThread[partNumber] != null)
      				{
      					chunkThread[partNumber].start();
      				}
-     				fileSizeToDownload -= CHUNK_SIZE;
+     				fileSizeToDownload -= chunkSize;
      				partNumber++;
+     				//numThreads++;
      			}
      		}
      		
-     		int partNum = 0;
-     		while(partNum < partNumber){
-     			chunkThread[partNum].chunkThread.join();
+     		partNumber = 0;
+     		while(partNumber < numOfChunksToDownload){
+     			chunkThread[partNumber].chunkThread.join();
      			//System.out.println("\npartNum: "+ partNum+"\n");
-     			partNum++;
-     		}
+     			partNumber++;
+     		}*/
+     		
+     		
+     		
+     		int numThreads = 0;
+      	    int partNum = 0;
+      		while(fileSizeToDownload > 0){
+      			iterator = futureTracker.getTrackers().iterator();
+      			while(iterator.hasNext() && fileSizeToDownload > 0){
+      				
+      				if(copyfileSizeToDownload > FILE_HUNDRED_MB){
+      					if(numThreads == 3){
+          					while(partNum < partNumber){
+          		     			chunkThread[partNum].chunkThread.join();
+          		     			//System.out.println("\npartNum: "+ partNum+"\n");
+          		     			partNum++;
+          		     		}
+          					numThreads = 0;
+          				}
+      				}
+      				
+      				trackerData = iterator.next();
+      				long fileSizeDownloaded = partNumber*CHUNK_SIZE_DOWNLOAD;
+      				long fileSizeRemaining = copyfileSizeToDownload - fileSizeDownloaded;
+      				System.out.println(partNumber+" Actual FileSize: "+ copyfileSizeToDownload);
+      				System.out.println(partNumber+" FileSize Downloaded: "+ fileSizeDownloaded);
+      				
+      				System.out.println(partNumber+" FileSize Remaining: "+ fileSizeRemaining);
+      				
+      				// If fileSizeRemaining is greater than CHUNK_SIZE_DOWNLOAD, then retain CHUNK_SIZE_DOWNLOAD
+      				// If it is the last chunk, fileSizeRemaining will be less than set CHUNK_SIZE_DOWNLOAD, so using fileSizeRemaining for the last chunk
+      				chunkSize = (fileSizeRemaining > CHUNK_SIZE_DOWNLOAD) ? (CHUNK_SIZE_DOWNLOAD): fileSizeRemaining;
+      				
+      				System.out.println(partNumber+" ClientPeer: ChunkSize: "+ chunkSize);
+      				chunkSizeArray[partNumber] = chunkSize;
+      				
+      				chunkThread[partNumber] = new ChunkThread("chunkThread", trackerData, searchFileName+"_Part"+partNumber, chunkSize);
+      				if(chunkThread[partNumber] != null)
+      				{
+      					chunkThread[partNumber].start();
+      				}
+      				fileSizeToDownload -= chunkSize;
+      				partNumber++;
+      				numThreads++;
+      			}
+      		}
+      		
+      		partNum = 0;
+      		while(partNum < numOfChunksToDownload){
+      			chunkThread[partNum].chunkThread.join();
+      			//System.out.println("\npartNum: "+ partNum+"\n");
+      			partNum++;
+      		}
      		
      		System.out.println("\n================= Hurrah all parts downloaded ================= ");
      		System.out.println("\nJoining all parts and making your file...");
@@ -103,7 +213,7 @@ public class P2PControllerClientPeer {
 			System.out.println("Number of files in download folder: "+listOfFiles.length);
 			//PrintWriter combineFile = new PrintWriter("./download/"+searchFileName);
 			
-			// Deleting the existing file
+			// Deleting the file to download if it already exists inside download folder
 			File outputFile = new File("./download/"+searchFileName);
 			if(outputFile.exists()){
 				outputFile.delete();
@@ -115,17 +225,17 @@ public class P2PControllerClientPeer {
 				File tmpFile = new File("./download/tmp_"+searchFileName+"/tmp_"+searchFileName+"_Part"+i);
 				
 				FileInputStream inputStream = new FileInputStream(tmpFile);
-				byte[] buf = new byte[chunkSizeArray[i]];
-				inputStream.read(buf, 0, chunkSizeArray[i]);
-				combineFile.write(buf);
+				byte[] filePartBuf = new byte[(int)chunkSizeArray[i]];
+				inputStream.read(filePartBuf, 0, (int)chunkSizeArray[i]);
+				combineFile.write(filePartBuf);
 				inputStream.close();
 				
-				//tmpFile.delete(); // Deleting the tmp file part after writing into the actual file
+				tmpFile.delete(); // Deleting the tmp file part after writing into the actual file
 				
 			}
 			combineFile.close();
 			
-			//folder.delete(); // this will work only if the folder is empty
+			folder.delete(); // this will work only if the folder is empty
 			System.out.println("\n================= All Parts joined, FILE DOWNLOADED SUCCESSFULLY to download folder ==============");
 			System.out.println("\nChecking MD5SUM FILE INTEGRITY CHECK...");
 			

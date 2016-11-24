@@ -5,11 +5,18 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Text;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
+
+import com.p2p.utils.UserDetails;
+
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.widgets.Label;
 
 public class LoginScreen {
 	private Text txtEmail;
@@ -50,18 +57,39 @@ public class LoginScreen {
 		shlLogin.setSize(450, 300);
 		shlLogin.setText("Login");
 		
+		Label lblStatus = new Label(shlLogin, SWT.NONE);
 		Button btnLogin = new Button(shlLogin, SWT.NONE);
+		
 		btnLogin.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseDown(MouseEvent e) {
-				String [] params = new String[2];
-				params[0] = txtEmail.getText();
-				HomeScreen.updateIncomingShell(shlLogin, params);
-				HomeScreen homeScreen = new HomeScreen();
-				homeScreen.open();
+				
+				SessionFactory sessionFactory = new Configuration().configure().buildSessionFactory();
+				Session session = sessionFactory.openSession();
+				session.beginTransaction();
+				session.getTransaction().commit();
+				
+				UserDetails getUser = session.get(com.p2p.utils.UserDetails.class, txtEmail.getText());
+				if(getUser != null){
+					System.out.println("User's Password:"+ getUser.getPassword());
+					if(txtPassword.getText().equals(getUser.getPassword())){
+						System.out.println("User Authentication successful");
+						String [] params = new String[2];
+						params[0] = getUser.getName();
+						params[1] = txtEmail.getText();
+						HomeScreen.updateIncomingShell(shlLogin, params);
+						HomeScreen homeScreen = new HomeScreen();
+						homeScreen.open();
+					}else{
+						lblStatus.setText("Invalid Username/Password");
+					}
+				}
+				
+				session.close();
+				sessionFactory.close();
 			}
 		});
-		btnLogin.setBounds(147, 134, 133, 25);
+		btnLogin.setBounds(165, 161, 133, 25);
 		btnLogin.setText("Login");
 		
 		Button btnSignUp = new Button(shlLogin, SWT.NONE);
@@ -74,7 +102,7 @@ public class LoginScreen {
 				userRegistrationScreen.open();
 			}
 		});
-		btnSignUp.setBounds(78, 179, 133, 25);
+		btnSignUp.setBounds(96, 206, 133, 25);
 		btnSignUp.setText("Sign Up");
 		
 		Button btnForgotPassword = new Button(shlLogin, SWT.NONE);
@@ -87,22 +115,27 @@ public class LoginScreen {
 				forgotPasswordScreen.open();
 			}
 		});
-		btnForgotPassword.setBounds(225, 179, 133, 25);
+		btnForgotPassword.setBounds(243, 206, 133, 25);
 		btnForgotPassword.setText("Forgot Password");
 		
 		txtEmail = new Text(shlLogin, SWT.BORDER);
-		txtEmail.setBounds(200, 45, 145, 25);
+		txtEmail.setBounds(218, 45, 145, 25);
 		
 		txtPassword = new Text(shlLogin, SWT.BORDER);
-		txtPassword.setBounds(200, 83, 145, 25);
+		txtPassword.setBounds(218, 83, 145, 25);
+		txtPassword.setEchoChar('*');
 		
 		CLabel lblEmailId = new CLabel(shlLogin, SWT.NONE);
-		lblEmailId.setBounds(43, 45, 133, 25);
+		lblEmailId.setBounds(61, 45, 133, 25);
 		lblEmailId.setText("Email Id");
 		
 		CLabel lblPassword = new CLabel(shlLogin, SWT.NONE);
 		lblPassword.setText("Password");
-		lblPassword.setBounds(43, 83, 133, 25);
+		lblPassword.setBounds(61, 83, 133, 25);
+		
+
+		lblStatus.setAlignment(SWT.CENTER);
+		lblStatus.setBounds(61, 126, 305, 15);
 
 		
 		shlLogin.open();
