@@ -75,8 +75,10 @@ public class LoginScreen {
 					if(txtPassword.getText().equals(getUser.getPassword())){
 						System.out.println("User Authentication successful");
 						String [] params = new String[2];
-						params[0] = getUser.getName();
-						params[1] = txtEmail.getText();
+						
+						params[0] = txtEmail.getText();
+						params[1] = getUser.getName();
+						
 						HomeScreen.updateIncomingShell(shlLogin, params);
 						HomeScreen homeScreen = new HomeScreen();
 						homeScreen.open();

@@ -104,16 +104,7 @@ public class HomeScreen {
 		lblWelcomeuser.setFont(SWTResourceManager.getFont("Segoe UI", 12, SWT.NORMAL));
 		lblWelcomeuser.setAlignment(SWT.CENTER);
 		//lblWelcomeuser.setText("Welcome User");
-		
-		if(incomingShell != null){
-			if(incomingShell.getText().equalsIgnoreCase("Login")){
-				lblWelcomeuser.setText("Welcome "+incomingArgs[0]);
-				// Update code to retrieve values from database.
-				
-			}else if(incomingShell.getText().equalsIgnoreCase("Sign Up")){
-				lblWelcomeuser.setText("Welcome "+incomingArgs[1]);
-			}
-		}
+		lblWelcomeuser.setText("Welcome "+incomingArgs[1]); // Setting lblWelcomeuser Label to Welcome <Fullname> retrieved from database
 		
 		lblWelcomeuser.setBounds(27, 10, 231, 31);
 		
