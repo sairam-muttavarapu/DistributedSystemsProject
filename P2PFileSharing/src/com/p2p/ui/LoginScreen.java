@@ -135,7 +135,7 @@ public class LoginScreen {
 					System.out.println("User Authentication successful");
 					String fullName = "User";
 					
-					if(resultsStr.split("_")[1] != null){
+					if(resultsStr.split("_").length == 2){
 						fullName = resultsStr.split("_")[1];
 					}
 					
