@@ -201,11 +201,27 @@ if($reqQueryType == "put"){
 				echo "Failure";
 			}
 			break;
-		case "Trust":
-			//echo "I am inside Trust";
+		case "TrustDetails":
+			//echo "I am inside Trust"; // gets ipaddress, retrieves email, 
 			$ipaddressFromRequest = $_POST["ipaddress"];
-			$emailIdFromRequest   = $_POST["email"];
-			
+			$sql = "SELECT email FROM UserEmailIP where ipaddress='$ipaddressFromRequest'";
+			$result = $conn->query($sql);
+			if ($result->num_rows > 0) {
+				$row = $result->fetch_assoc();
+				$emailRetrieved = $row["email"];
+				
+				$sql = "SELECT * FROM TrustFactorDetails where email='$emailRetrieved'";
+				$result = $conn->query($sql);
+				if ($result->num_rows > 0) {
+					$row = $result->fetch_assoc();
+					$trustFactorRetrieved = $row["trustFactor"];
+					$numTransactionsRetrieved = $row["numTransactions"];
+				}
+				$responseMsg = "Success_".$emailRetrieved."_".$trustFactorRetrieved."_".$numTransactionsRetrieved;
+				echo $responseMsg;
+			}else{
+				echo "Failure";
+			}
 			break;
 		case "IPList":
 			$sql = "SELECT ipaddress FROM UserEmailIP";
@@ -221,7 +237,6 @@ if($reqQueryType == "put"){
 			}else{
 				echo "Failure";
 			}
-			
 			break;
 	}	
 }

@@ -3,12 +3,17 @@ package com.p2p.ui;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Button;
+
+import java.util.ArrayList;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Text;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 
+import com.p2p.dht.P2PControllerBootPeer;
+import com.p2p.security.FirewallController;
 import com.p2p.utils.HTTPRequestResponseHandler;
 import com.p2p.utils.UserDetails;
 
@@ -31,6 +36,37 @@ public class LoginScreen {
 	 */
 	public static void main(String[] args) {
 		try {
+			if(args.length > 0){
+				if(args[0].equalsIgnoreCase("bootPeer")){
+					
+					String reqParams = "queryType=get&service=IPList";
+					String resultsStr = HTTPRequestResponseHandler.doHTTPPostRequest(reqParams);
+					String statusStr = resultsStr.split("_")[0];
+			    	if(statusStr.equalsIgnoreCase("Success")){
+			    		System.out.println("Starting DDOS Security Thread");
+			    		String [] resultsStrArray = resultsStr.split("_");
+			    		ArrayList<String> ipAddressToAllowList = new ArrayList<String>();
+			    		ipAddressToAllowList.add("35.164.30.142");
+			    		System.out.println("Allowing bootPeer to the iptables");
+			    		for(String results : resultsStrArray){
+			    			if(!results.equalsIgnoreCase("Success")){
+			    				ipAddressToAllowList.add(results);
+			    				System.out.println("Allowing "+results+" ipaddress to the iptables");
+			    			}
+			    		}
+			    		String[] ipAddressToAllowArr = ipAddressToAllowList.toArray(new String[ipAddressToAllowList.size()]);
+			    		FirewallController.Activate(ipAddressToAllowArr);
+			    		System.out.println("Succesfully started Firewall Security For Boot Peer!");
+			    		
+			    	}else if(statusStr.equalsIgnoreCase("Failure")){
+			    		System.out.println("Unable to retrieve IPs list, not starting DDOS Security Thread");
+			    	}else if(statusStr.equalsIgnoreCase("Error")){
+			    		System.out.println("Unknown error occurred");
+			    	}
+			    	
+					P2PControllerBootPeer.MakePeer();
+				}
+			}
 			LoginScreen window = new LoginScreen();
 			window.open();
 		} catch (Exception e) {
