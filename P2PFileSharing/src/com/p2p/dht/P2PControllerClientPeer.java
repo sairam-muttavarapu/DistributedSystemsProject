@@ -18,6 +18,8 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 
+import com.p2p.security.FirewallController;
+import com.p2p.utils.HTTPRequestResponseHandler;
 import com.p2p.utils.TrustFactorDetails;
 import com.p2p.utils.UserDetails;
 import com.p2p.utils.UserEmailIP;
@@ -164,9 +166,9 @@ public class P2PControllerClientPeer{
      		}*/
      		
      		//Session Begin
-     		SessionFactory sessionFactory = new Configuration().configure().buildSessionFactory();
+     		/*SessionFactory sessionFactory = new Configuration().configure().buildSessionFactory();
 			Session session = sessionFactory.openSession();
-			session.beginTransaction();
+			session.beginTransaction();*/
 			
      		iterator = futureTracker.getTrackers().iterator();
      		int numOfFilePeers = futureTracker.getTrackers().size();
@@ -180,7 +182,7 @@ public class P2PControllerClientPeer{
 				System.out.println("ipaddress 0: "+trackerData.getPeerAddress().getInetAddress().toString().split("/")[0]);
 				System.out.println("ipaddress 1: "+trackerData.getPeerAddress().getInetAddress().toString().split("/")[1]);
 				System.out.println("ipaddress retrieved: "+ipaddress);
-				UserEmailIP getUserEmailIP = new UserEmailIP();
+				/*UserEmailIP getUserEmailIP = new UserEmailIP();
 				getUserEmailIP = session.get(com.p2p.utils.UserEmailIP.class, ipaddress);
 				String emailId = getUserEmailIP.getEmail();
 				
@@ -188,14 +190,35 @@ public class P2PControllerClientPeer{
 				getTrustFactorDetails = session.get(com.p2p.utils.TrustFactorDetails.class, emailId);
 				
 				int trustFactor = Integer.parseInt(getTrustFactorDetails.getTrustFactor());
-				int numTransactions = Integer.parseInt(getTrustFactorDetails.getNumTransactions());
+				int numTransactions = Integer.parseInt(getTrustFactorDetails.getNumTransactions());*/
+				
+				String reqParams = "queryType=get&service=TrustDetails&"+"ipaddress="+ipaddress;
+				String resultsStr = HTTPRequestResponseHandler.doHTTPPostRequest(reqParams);
+				String statusStr = resultsStr.split("_")[0];
+				String emailId = "";
+				int trustFactor = 0;
+				int numTransactions = 0;
+				if(statusStr.equalsIgnoreCase("Success")){
+					
+					if(resultsStr.split("_").length == 4){
+						emailId = resultsStr.split("_")[1];
+						trustFactor = Integer.parseInt(resultsStr.split("_")[2]);
+						numTransactions = Integer.parseInt(resultsStr.split("_")[3]);
+					}
+				}else if(statusStr.equalsIgnoreCase("Failure")){
+					System.out.println("No Email mapped for this IP");
+				}else if(statusStr.equalsIgnoreCase("Error")){
+					System.out.println("Unknown error occurred");
+				}
+				
+				
 				ArrayList<Double> downloadSpeedList = new ArrayList<Double>();
 				trustFactorPlusIPArrayList.add(new TrustFactorPlusIP(trustFactor, numTransactions, emailId, trackerData, downloadSpeedList));
   			}
 
   			//Session close
-  			session.close();
-			sessionFactory.close();
+  			//session.close();
+			//sessionFactory.close();
   			
   			Collections.sort(trustFactorPlusIPArrayList);
   			
@@ -574,6 +597,30 @@ public class P2PControllerClientPeer{
     	// FileServerThread which handles file requests
     	FileServerThread fileServerThread = new FileServerThread("dataExchange");
     	fileServerThread.start();
+    	
+    	String reqParams = "queryType=get&service=IPList";
+		String resultsStr = HTTPRequestResponseHandler.doHTTPPostRequest(reqParams);
+		String statusStr = resultsStr.split("_")[0];
+    	if(statusStr.equalsIgnoreCase("Success")){
+    		System.out.println("Starting DDOS Security Thread");
+    		String [] resultsStrArray = resultsStr.split("_");
+    		ArrayList<String> ipAddressToAllowList = new ArrayList<String>();
+    		ipAddressToAllowList.add("35.164.30.142");
+    		System.out.println("Allowing bootPeer to the iptables");
+    		for(String results : resultsStrArray){
+    			if(!results.equalsIgnoreCase("Success")){
+    				ipAddressToAllowList.add(results);
+    				System.out.println("Allowing "+results+" ipaddress to the iptables");
+    			}
+    		}
+    		String[] ipAddressToAllowArr = ipAddressToAllowList.toArray(new String[ipAddressToAllowList.size()]);
+    		FirewallController.Activate(ipAddressToAllowArr);
+    		System.out.println("Succesfully started Firewall Security For Client Peer!");
+    	}else if(statusStr.equalsIgnoreCase("Failure")){
+    		System.out.println("Unable to retrieve IPs list, not starting DDOS Security Thread");
+    	}else if(statusStr.equalsIgnoreCase("Error")){
+    		System.out.println("Unknown error occurred");
+    	}
     	
     	System.out.println("====================== Welcome to P2P DHT System ====================== ");
     	System.out.println("================== You can upload/download files now! ================= "); 	
