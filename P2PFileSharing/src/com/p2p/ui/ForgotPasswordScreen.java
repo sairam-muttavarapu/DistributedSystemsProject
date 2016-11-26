@@ -99,7 +99,7 @@ public class ForgotPasswordScreen {
 		
 		lblConfirmNewPassword.setVisible(false);
 		txtConfirmNewPassword.setVisible(false);
-		txtNewPassword.setEchoChar('*');
+		txtConfirmNewPassword.setEchoChar('*');
 		
 		btnConfirm.setVisible(false);
 		
