@@ -3,6 +3,9 @@ package com.p2p.ui;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.custom.CLabel;
+
+import java.net.InetAddress;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Text;
 import org.hibernate.Session;
@@ -139,7 +142,17 @@ public class UserRegistrationScreen {
 						lblStatus.setText("User with given Email already exists");
 					}else if(statusStr.equalsIgnoreCase("Failure")){
 						lblStatus.setText("");
-						reqParams = "queryType=put&service=AddUser&"+"email="+txtEmail.getText()+"&name="+txtFullname.getText()+"&password="+txtPassword.getText();
+						
+						String ipaddress="";
+						try{
+							ipaddress = InetAddress.getLocalHost().getHostAddress();
+						}catch(Exception e1){
+							e1.printStackTrace();
+						}
+						
+						System.out.println("IPAddress of the machine: "+ ipaddress);
+					
+						reqParams = "queryType=put&service=AddUser&"+"email="+txtEmail.getText()+"&name="+txtFullname.getText()+"&password="+txtPassword.getText()+"&ipaddress="+ipaddress;
 						resultsStr = HTTPRequestResponseHandler.doHTTPPostRequest(reqParams);
 						
 						if(resultsStr.equalsIgnoreCase("Success")){

@@ -25,6 +25,7 @@ if($reqQueryType == "put"){
 		$emailIdFromRequest  = $_POST["email"];
 		$nameFromRequest = $_POST["name"];
 		$passwordFromRequest = $_POST["password"];
+		$ipaddressFromRequest = $_POST["ipaddress"];
 		//echo "Email: ".$emailIdFromRequest;
 		//echo "Name: ".$nameFromRequest;
 		//echo "Password: ".$passwordFromRequest;
@@ -32,6 +33,12 @@ if($reqQueryType == "put"){
 		//echo $sql;
 		if($conn->query($sql) == true){
 			//echo "New record created successfully";
+			
+			$sql = "INSERT INTO TrustFactorDetails(email,trustFactor,numTransactions) VALUES('$emailIdFromRequest',10,0)";
+			$conn->query($sql);
+			
+			$sql = "INSERT INTO UserEmailIP(email,ipaddress) VALUES('$emailIdFromRequest','$ipaddressFromRequest')";
+			$conn->query($sql);
 			
 			$emailFrom = "sint.devteam@gmail.com"; //"contact@yoursite.com";
 			
@@ -103,6 +110,16 @@ if($reqQueryType == "put"){
 			//echo "0 results";
 			echo "UserNotFound";
 		}	
+	}else if($reqService == "UpdateTrust"){
+		$emailIdFromRequest  = $_POST["email"];
+		$trustFactorFromRequest  = $_POST["trustFactor"];
+		$numTransactionsFromRequest = $_POST["numTransactions"];
+		$sql = "UPDATE TrustFactorDetails SET trustFactor='$trustFactorFromRequest', numTransactions='$numTransactionsFromRequest' WHERE email='$emailIdFromRequest'";
+		if($conn->query($sql) == true){
+			echo "Success";
+		}else{
+			echo "Failure";
+		}
 	}
 	
 
@@ -185,6 +202,7 @@ if($reqQueryType == "put"){
 			//echo "I am inside Login";
 			$emailIdFromRequest  = $_POST["email"];
 			$passwordFromRequest = $_POST["password"];
+			$ipaddressFromRequest = $_POST["ipaddress"];
 			//echo "Email: ".$emailIdFromRequest;
 			//echo "Password: ".$passwordFromRequest;
 			$sql = "SELECT name FROM UserDetails WHERE email='$emailIdFromRequest' and password='$passwordFromRequest'";
@@ -196,6 +214,10 @@ if($reqQueryType == "put"){
 				
 				$row = $result->fetch_assoc();
 				echo "Success_".$row["name"];
+				
+				$sql = "UPDATE UserEmailIP SET ipaddress='$ipaddressFromRequest' WHERE email='$emailIdFromRequest'";
+				$result = $conn->query($sql);
+				
 			} else {
 				//echo "0 results";
 				echo "Failure";

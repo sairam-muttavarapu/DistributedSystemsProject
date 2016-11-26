@@ -4,6 +4,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Button;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 
 import org.eclipse.swt.SWT;
@@ -127,7 +128,16 @@ public class LoginScreen {
 				session.close();
 				sessionFactory.close();*/
 				
-				String reqParams = "queryType=get&service=Login&"+"email="+txtEmail.getText()+"&password="+txtPassword.getText();
+				String ipaddress="";
+				try{
+					ipaddress = InetAddress.getLocalHost().getHostAddress();
+				}catch(Exception e1){
+					e1.printStackTrace();
+				}
+				
+				System.out.println("IPAddress of the machine: "+ ipaddress);
+				
+				String reqParams = "queryType=get&service=Login&"+"email="+txtEmail.getText()+"&password="+txtPassword.getText()+"&ipaddress="+ipaddress;
 				String resultsStr = HTTPRequestResponseHandler.doHTTPPostRequest(reqParams);
 				String statusStr = resultsStr.split("_")[0];
 				
