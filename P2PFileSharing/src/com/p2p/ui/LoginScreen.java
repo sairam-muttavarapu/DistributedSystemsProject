@@ -9,6 +9,7 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 
+import com.p2p.utils.HTTPRequestResponseHandler;
 import com.p2p.utils.UserDetails;
 
 import org.eclipse.swt.custom.CLabel;
@@ -64,7 +65,7 @@ public class LoginScreen {
 			@Override
 			public void mouseDown(MouseEvent e) {
 				
-				SessionFactory sessionFactory = new Configuration().configure().buildSessionFactory();
+				/*SessionFactory sessionFactory = new Configuration().configure().buildSessionFactory();
 				Session session = sessionFactory.openSession();
 				session.beginTransaction();
 				session.getTransaction().commit();
@@ -88,7 +89,32 @@ public class LoginScreen {
 				}
 				
 				session.close();
-				sessionFactory.close();
+				sessionFactory.close();*/
+				
+				String reqParams = "queryType=get&service=Login&"+"email="+txtEmail.getText()+"&password="+txtPassword.getText();
+				String resultsStr = HTTPRequestResponseHandler.doHTTPPostRequest(reqParams);
+				String statusStr = resultsStr.split("_")[0];
+				
+				if(statusStr.equalsIgnoreCase("Success")){
+					System.out.println("User Authentication successful");
+					String fullName = "User";
+					
+					if(resultsStr.split("_")[1] != null){
+						fullName = resultsStr.split("_")[1];
+					}
+					
+					String [] params = new String[2];
+					params[0] = txtEmail.getText();
+					params[1] = fullName;
+					HomeScreen.updateIncomingShell(shlLogin, params);
+					HomeScreen homeScreen = new HomeScreen();
+					homeScreen.open();
+				}else if(statusStr.equalsIgnoreCase("Failure")){
+					lblStatus.setText("Invalid Username/Password");
+				}else if(statusStr.equalsIgnoreCase("Error")){
+					lblStatus.setText("Unknown Error Occurred. Try after sometime");
+				}
+				
 			}
 		});
 		btnLogin.setBounds(165, 161, 133, 25);
