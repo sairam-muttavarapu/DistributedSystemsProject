@@ -17,11 +17,11 @@ import com.p2p.utils.HTTPRequestResponseHandler;
 
 public class FeedbackScreen {
 
-	protected Shell shell;
+	protected Shell shlFeedback;
 	private Text txtFeedback;
 	private static ArrayList<TrustFactorPlusIP> incomingArgs;
 	private static Shell incomingShell;
-	private static String status;
+	private static String[] incomingStrArr;
 
 	/**
 	 * Launch the application.
@@ -46,38 +46,67 @@ public class FeedbackScreen {
 		
 		Display display = Display.getDefault();
 		createContents();
-		shell.open();
-		shell.layout();
-		while (!shell.isDisposed()) {
+		shlFeedback.open();
+		shlFeedback.layout();
+		while (!shlFeedback.isDisposed()) {
 			if (!display.readAndDispatch()) {
 				display.sleep();
 			}
 		}
 	}
 	
-	public static void updateIncomingShell(Shell _shell, ArrayList<TrustFactorPlusIP> _args, String _status){
+	public static void updateIncomingShell(Shell _shell, ArrayList<TrustFactorPlusIP> _args, String[] _strArr){
 		incomingShell = _shell;
 		incomingArgs = _args;
-		status = _status;
+		incomingStrArr = _strArr;
 	}
 
 	/**
 	 * Create contents of the window.
 	 */
 	protected void createContents() {
-		shell = new Shell();
-		shell.setSize(450, 300);
-		shell.setText("SWT Application");
+		shlFeedback = new Shell();
+		shlFeedback.setSize(450, 300);
+		shlFeedback.setText("Feedback");
 		
-		txtFeedback = new Text(shell, SWT.BORDER);
-		txtFeedback.setBounds(113, 141, 81, 29);
+		txtFeedback = new Text(shlFeedback, SWT.BORDER);
+		txtFeedback.setBounds(140, 141, 81, 29);
 		
-		Button btnSubmit = new Button(shell, SWT.NONE);
+		Label lblStatus = new Label(shlFeedback, SWT.NONE);
+		Label lblFeedback = new Label(shlFeedback, SWT.NONE);
+		Label lblFeedbackstatus = new Label(shlFeedback, SWT.NONE);
+		
+		Button btnSubmit = new Button(shlFeedback, SWT.NONE);
 		btnSubmit.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseDown(MouseEvent e) {
+				
+				if(!txtFeedback.getText().equalsIgnoreCase("") && !txtFeedback.getText().equalsIgnoreCase(" ")){
+					int intFeedback = Integer.parseInt(txtFeedback.getText());
+					if(intFeedback < 0 || intFeedback > 10){
+						lblFeedbackstatus.setText("Please give feedback in 0-10 range");
+						return;
+					}
+				}
+				
 				for(TrustFactorPlusIP peer : incomingArgs){
-					double trustfactor_local = (double)(peer.getTrustFactor() * 0.7) + (double)(Integer.parseInt(txtFeedback.getText()) * 0.3);
+					double trustfactor_local = 10;
+					if(txtFeedback.getText().equalsIgnoreCase("") || txtFeedback.getText().equalsIgnoreCase(" ")){
+						if(peer.isMd5sumStatus()){
+							trustfactor_local = (double)(peer.getTrustFactor() * 0.9) + (double)(10 * 0.1); // 10 feedback weight
+						}else{
+							trustfactor_local = (double)(peer.getTrustFactor() * 0.9) + (double)(0 * 0.1);  // 0 feedback weight
+						}
+					}else{
+						if(peer.isMd5sumStatus()){
+							trustfactor_local = (double)(peer.getTrustFactor() * 0.9) + (double)(10 * 0.1);	// 10 feedback weight
+						}else{
+							// user's feedback weight
+							trustfactor_local = (double)(peer.getTrustFactor() * 0.9) + (double)(Integer.parseInt(txtFeedback.getText()) * 0.1);
+						}
+					}
+					
+					System.out.println("TrustFactor after feedback: "+trustfactor_local);
 					
 					 //Get the element (or) iterate through the ArrayList
                     String reqParams = "queryType=put&service=UpdateTrust&"+"email="+peer.getEmail()+
@@ -93,27 +122,29 @@ public class FeedbackScreen {
 				
 				}
 					
-				
 				//navigate back to homescreen
 				String [] params = new String[2];
-				HomeScreen.updateIncomingShell(shell, params);
+				params[0] = "feedBackScreen";
+				params[1] = incomingStrArr[1];
+				
+				HomeScreen.updateIncomingShell(shlFeedback, params);
 				HomeScreen homeScreen = new HomeScreen();
 				homeScreen.open();
 			
 			}
 		});
-		btnSubmit.setBounds(215, 141, 97, 29);
+		btnSubmit.setBounds(236, 141, 97, 29);
 		btnSubmit.setText("Submit");
 		
-		Label lblFeedback = new Label(shell, SWT.NONE);
 		lblFeedback.setAlignment(SWT.CENTER);
-		lblFeedback.setBounds(52, 73, 343, 17);
+		lblFeedback.setBounds(48, 90, 347, 29);
 		lblFeedback.setText("Your Feedback for the Download: 0-10");
 		
-		Label lblStatus = new Label(shell, SWT.NONE);
 		lblStatus.setAlignment(SWT.CENTER);
-		lblStatus.setBounds(188, 10, 71, 17);
-		lblStatus.setText(status);
+		lblStatus.setBounds(38, 34, 347, 23);
+		lblStatus.setText(incomingStrArr[0]);
+		
+		lblFeedbackstatus.setBounds(63, 188, 322, 29);
 
 	}
 }

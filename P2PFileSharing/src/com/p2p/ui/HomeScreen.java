@@ -51,7 +51,9 @@ public class HomeScreen {
 		}
 		
 		try {
-			P2PControllerClientPeer.MakePeer(incomingArgs[0]);
+			if(!incomingArgs[0].equalsIgnoreCase("feedBackScreen")){
+				P2PControllerClientPeer.MakePeer(incomingArgs[0]);
+			}
 		} catch (NumberFormatException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -77,9 +79,17 @@ public class HomeScreen {
 				try {
 					if(txtSearchfilename.getText() != null && !txtSearchfilename.getText().equalsIgnoreCase("")){
 						ArrayList<TrustFactorPlusIP> trustFactorPlusIPArrayList = P2PControllerClientPeer.GetFile(txtSearchfilename.getText());
-						FeedbackScreen.updateIncomingShell(shlHome, trustFactorPlusIPArrayList, downloadStatus); 
-						FeedbackScreen feedback = new FeedbackScreen();
-						feedback.open();
+						if(downloadStatus.equalsIgnoreCase("noFile")){
+							lblStatus.setText("No file with given name found");
+						}else{
+							
+							String args[] = new String[2];
+							args[0] = downloadStatus;
+							args[1] = incomingArgs[1];
+							FeedbackScreen.updateIncomingShell(shlHome, trustFactorPlusIPArrayList, args); 
+							FeedbackScreen feedback = new FeedbackScreen();
+							feedback.open();
+						}
 						
 					}else{
 						lblStatus.setText("Please give filename");

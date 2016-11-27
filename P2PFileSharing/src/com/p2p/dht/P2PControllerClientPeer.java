@@ -47,7 +47,10 @@ public class P2PControllerClientPeer{
     public static final long CHUNK_ONE_MB = 1*1024*1024;
     public static final long CHUNK_FIFTY_MB = 50*1024*1024;
     public static final long CHUNK_HUNDRED_MB = 50*1024*1024;
-    public static final int BEST_CASE_a = 50 * 2400; //50 MBPS speed * 2400 MB file size - best case factor a
+    
+    public static final long BEST_CASE_CHUNK_1KB = 256*1024; //256 KBPS speed * 1 KB file size - best case factor 
+    public static final long BEST_CASE_CHUNK_1MB = 10*1024*1024; //10 MBPS speed * 20 MB file size - best case factor
+    public static final long BEST_CASE_CHUNK_50MB = 35*1024*1024; //35 MBPS speed * 2400 MB file size - best case factor
     public static int feedback = 0;
     public static boolean feedback_set = false;
     
@@ -209,7 +212,7 @@ public class P2PControllerClientPeer{
 					
 					if(resultsStr.split("_").length == 4){
 						emailId = resultsStr.split("_")[1];
-						trustFactor = Integer.parseInt(resultsStr.split("_")[2]);
+						trustFactor = Double.parseDouble(resultsStr.split("_")[2]);
 						numTransactions = Integer.parseInt(resultsStr.split("_")[3]);
 					}
 				}else if(statusStr.equalsIgnoreCase("Failure")){
@@ -220,7 +223,7 @@ public class P2PControllerClientPeer{
 				
 				
 				ArrayList<Double> downloadSpeedList = new ArrayList<Double>();
-				trustFactorPlusIPArrayList.add(new TrustFactorPlusIP(trustFactor, numTransactions, emailId, trackerData, downloadSpeedList, false));
+				trustFactorPlusIPArrayList.add(new TrustFactorPlusIP(trustFactor, numTransactions, emailId, trackerData, downloadSpeedList, true));
   			}
 
   			//Session close
@@ -536,12 +539,7 @@ public class P2PControllerClientPeer{
  			 }	 
  				 
  			//for trust factot ENDS  
- 			 
- 			
- 			for(int i=0; i< futureTracker.getTrackers().size(); i++){
- 				md5SumChunkThread[i].Md5SumChunkThread.join();
-     		}
- 			
+	
  			//File file = new File("./download/wiki.txt");
 			
  			//compute the md5sum for the downloaded file
@@ -552,6 +550,10 @@ public class P2PControllerClientPeer{
      		System.out.println("Downloaded File's md5sum: "+curMd5Sum);
      		
      		
+ 			for(int i=0; i< futureTracker.getTrackers().size(); i++){
+ 				md5SumChunkThread[i].Md5SumChunkThread.join();
+     		}
+ 			
      		//Edit-Subir STARTS
      		String oldRefMd5Sum = "";
      		String RefMd5Sum = "";
@@ -585,9 +587,10 @@ public class P2PControllerClientPeer{
      		
      		if(curMd5Sum.equalsIgnoreCase(RefMd5Sum)){
  				System.out.println("DATA INTEGRITY VERIFIED");
+ 				HomeScreen.downloadStatus = "Download successful";
  				
  			}else{
- 				
+ 				HomeScreen.downloadStatus = "Download not successful as file integrity compromised";
  				for(TrustFactorPlusIP peer: trustFactorPlusIPArrayList){
  					PeerAddress p = peer.getTrackerData().getPeerAddress(); 
  					tmpMd5Sum = md5SumHashMap.get(p);
@@ -603,33 +606,47 @@ public class P2PControllerClientPeer{
  	     			}
  				
  				}
- 				
- 				
- 					//update trust factor
- 				for(TrustFactorPlusIP peer : trustFactorPlusIPArrayList){
- 					double a = 0.0;
- 					for(Double downloadSpeed : peer.getDownloadSpeedList()){
- 						a  += downloadSpeed * copyfileSizeToDownload; 						
- 					}
- 					
- 					a = ((a/peer.getDownloadSpeedList().size())/BEST_CASE_a) * 10;	
- 					double trustfactor_local = 0;
- 					double b = peer.isMd5sumStatus() ? 10: 0;
- 					double c = peer.getTrustFactor();
- 					while(!feedback_set);
- 					double d = (a*0.3 + b*0.5 + c*0.2);// 
- 					int newNumTransactions = peer.getNumTransactions() + peer.getDownloadSpeedList().size();
- 					double e = ((c * peer.getNumTransactions()) + (d * peer.getDownloadSpeedList().size()))/newNumTransactions;
- 					
- 					//trustfactor_local = (e * 0.7) + (feedback * 0.3);
- 					
- 					peer.setTrustFactor(e);
- 					peer.setNumTransactions(newNumTransactions);
- 				}
- 				HomeScreen.downloadStatus = "download successful";
  			}
      		
+     		long BEST_CASE_a = 1;
+     		if(CHUNK_SIZE_DOWNLOAD == CHUNK_ONE_KB){
+     			BEST_CASE_a = BEST_CASE_CHUNK_1KB*copyfileSizeToDownload;
+     		}else if(CHUNK_SIZE_DOWNLOAD == CHUNK_ONE_MB){
+     			BEST_CASE_a = BEST_CASE_CHUNK_1MB*copyfileSizeToDownload;
+     		}else if(CHUNK_SIZE_DOWNLOAD == CHUNK_FIFTY_MB){
+     			BEST_CASE_a = BEST_CASE_CHUNK_50MB*copyfileSizeToDownload;
+     		}
      		
+    		//update trust factor
+			for(TrustFactorPlusIP peer : trustFactorPlusIPArrayList){
+				double a = 0.0;
+				for(Double downloadSpeed : peer.getDownloadSpeedList()){
+					a  += downloadSpeed * copyfileSizeToDownload; 						
+				}
+				
+				a = ((a/peer.getDownloadSpeedList().size())/BEST_CASE_a) * 10;	
+				a = (a>10.0) ? 10.0:a;
+				double trustfactor_local = 0;
+				double b = peer.isMd5sumStatus() ? 10.0 : 0;
+				double c = peer.getTrustFactor();
+				double d = (a*0.3 + b*0.5 + c*0.2); //
+				System.out.println("a value: "+ a);
+				System.out.println("b value: "+ b);
+				System.out.println("c value: "+ c);
+				System.out.println("d value: "+ d);
+				int newNumTransactions = peer.getNumTransactions() + peer.getDownloadSpeedList().size();
+				double e = ((c * peer.getNumTransactions()) + (d * peer.getDownloadSpeedList().size()))/newNumTransactions;
+				
+				//trustfactor_local = (e * 0.7) + (feedback * 0.3);
+				
+				System.out.println("TrustFactor without feedback: "+e);
+				System.out.println("NewNumTransactions: "+newNumTransactions);
+				
+				peer.setTrustFactor(e);
+				peer.setNumTransactions(newNumTransactions);
+				
+			}
+			
  				
      			
      		// Edit-Subir ENDS
@@ -659,6 +676,7 @@ public class P2PControllerClientPeer{
      	}else{
      		//System.out.println("futureTracker not retrieved");
      		System.out.println("No file with FileName: "+searchFileName+" with the participating peers");
+     		HomeScreen.downloadStatus = "noFile";
      	}
      	
      	

@@ -11,7 +11,7 @@ public class TrustFactorPlusIP implements Comparable<TrustFactorPlusIP>{
 	private String email;
 	private TrackerData trackerData;
 	private ArrayList<Double> downloadSpeedList;
-	private boolean md5sumStatus = false;
+	private boolean md5sumStatus = true;
 	
 	public TrustFactorPlusIP(double trustFactor, int numTransactions, String email, TrackerData trackerData,
 			ArrayList<Double> downloadSpeedList, boolean _md5sumStatus) {
