@@ -3,12 +3,16 @@ package com.p2p.ui;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Button;
+
+import java.util.ArrayList;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.wb.swt.SWTResourceManager;
 
 import com.p2p.dht.P2PControllerClientPeer;
+import com.p2p.dht.TrustFactorPlusIP;
 
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -17,6 +21,8 @@ public class HomeScreen {
 	private Text txtSearchfilename;
 	private static Shell incomingShell;
 	private static String [] incomingArgs;
+	private Shell shlHome;
+	public static String downloadStatus = "";
 	/**
 	 * Launch the application.
 	 * @param args
@@ -38,6 +44,7 @@ public class HomeScreen {
 	/**
 	 * Open the window.
 	 */
+
 	public void open()  {
 		if(incomingShell != null){
 			incomingShell.setVisible(false);	
@@ -54,7 +61,7 @@ public class HomeScreen {
 		}
 		
 		Display display = Display.getDefault();
-		Shell shlHome = new Shell();
+		shlHome = new Shell();
 		shlHome.setLocation(450,200);
 		shlHome.setSize(450, 300);
 		shlHome.setText("Home");
@@ -69,7 +76,11 @@ public class HomeScreen {
 				//Search and Download Logic goes here
 				try {
 					if(txtSearchfilename.getText() != null && !txtSearchfilename.getText().equalsIgnoreCase("")){
-						P2PControllerClientPeer.GetFile(txtSearchfilename.getText());
+						ArrayList<TrustFactorPlusIP> trustFactorPlusIPArrayList = P2PControllerClientPeer.GetFile(txtSearchfilename.getText());
+						FeedbackScreen.updateIncomingShell(shlHome, trustFactorPlusIPArrayList, downloadStatus); 
+						FeedbackScreen feedback = new FeedbackScreen();
+						feedback.open();
+						
 					}else{
 						lblStatus.setText("Please give filename");
 					}

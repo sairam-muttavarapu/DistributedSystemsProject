@@ -19,6 +19,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 
 import com.p2p.security.FirewallController;
+import com.p2p.ui.HomeScreen;
 import com.p2p.utils.HTTPRequestResponseHandler;
 import com.p2p.utils.TrustFactorDetails;
 import com.p2p.utils.UserDetails;
@@ -46,13 +47,19 @@ public class P2PControllerClientPeer{
     public static final long CHUNK_ONE_MB = 1*1024*1024;
     public static final long CHUNK_FIFTY_MB = 50*1024*1024;
     public static final long CHUNK_HUNDRED_MB = 50*1024*1024;
+    public static final int BEST_CASE_a = 50 * 2400; //50 MBPS speed * 2400 MB file size - best case factor a
+    public static int feedback = 0;
+    public static boolean feedback_set = false;
+    
 
 
     public P2PControllerClientPeer(){
         System.out.println("Inside P2PControllerClientPeer Constructor");
     }
 
-    public static void GetFile(String searchFileName) throws NumberFormatException, Exception{
+    public static ArrayList<TrustFactorPlusIP> GetFile(String searchFileName) throws NumberFormatException, Exception{
+    	
+    	ArrayList<TrustFactorPlusIP> trustFactorPlusIPArrayList = new ArrayList<TrustFactorPlusIP>();
     	
      	FutureTracker futureTracker = another.getTracker(Number160.createHash(searchFileName)).start().awaitUninterruptibly();
      	if(futureTracker.isSuccess()){
@@ -173,7 +180,7 @@ public class P2PControllerClientPeer{
      		iterator = futureTracker.getTrackers().iterator();
      		int numOfFilePeers = futureTracker.getTrackers().size();
      		
-     		ArrayList<TrustFactorPlusIP> trustFactorPlusIPArrayList = new ArrayList<TrustFactorPlusIP>();
+     		
      		
   			while(iterator.hasNext() && fileSizeToDownload > 0){
   				trackerData = iterator.next();
@@ -196,7 +203,7 @@ public class P2PControllerClientPeer{
 				String resultsStr = HTTPRequestResponseHandler.doHTTPPostRequest(reqParams);
 				String statusStr = resultsStr.split("_")[0];
 				String emailId = "";
-				int trustFactor = 0;
+				double trustFactor = 0.0;
 				int numTransactions = 0;
 				if(statusStr.equalsIgnoreCase("Success")){
 					
@@ -213,7 +220,7 @@ public class P2PControllerClientPeer{
 				
 				
 				ArrayList<Double> downloadSpeedList = new ArrayList<Double>();
-				trustFactorPlusIPArrayList.add(new TrustFactorPlusIP(trustFactor, numTransactions, emailId, trackerData, downloadSpeedList));
+				trustFactorPlusIPArrayList.add(new TrustFactorPlusIP(trustFactor, numTransactions, emailId, trackerData, downloadSpeedList, false));
   			}
 
   			//Session close
@@ -500,6 +507,8 @@ public class P2PControllerClientPeer{
 			Md5SumChunkThread [] md5SumChunkThread = new Md5SumChunkThread[futureTracker.getTrackers().size()];
 			iterator = futureTracker.getTrackers().iterator();
 			
+			/*
+			//To be removed - STARTS
 			int peerNum = 0;
  			while(iterator.hasNext()){
  				trackerData = iterator.next();
@@ -511,6 +520,23 @@ public class P2PControllerClientPeer{
  				}
  				peerNum++;
  			}
+ 			//To be removed - ENDS
+ 			*/
+ 			
+ 			//for trust factor STARTS
+ 			 int peerNum = 0; 		 
+ 			 for(TrustFactorPlusIP peerDetails : trustFactorPlusIPArrayList){
+ 				trackerData = peerDetails.getTrackerData();
+ 				md5SumChunkThread[peerNum] = new Md5SumChunkThread("md5sumchunkThread", trackerData, searchFileName+"_md5sum", md5SumHashMap);
+ 				if(md5SumChunkThread[peerNum] != null)
+ 				{
+ 					md5SumChunkThread[peerNum].start();
+ 				}
+ 				peerNum++;				
+ 			 }	 
+ 				 
+ 			//for trust factot ENDS  
+ 			 
  			
  			for(int i=0; i< futureTracker.getTrackers().size(); i++){
  				md5SumChunkThread[i].Md5SumChunkThread.join();
@@ -518,16 +544,102 @@ public class P2PControllerClientPeer{
  			
  			//File file = new File("./download/wiki.txt");
 			
- 			//Iterating through hashmap to find if all the peers are valid
+ 			//compute the md5sum for the downloaded file
  			String tmpMd5Sum = "";
  			Process proc = Runtime.getRuntime().exec("md5sum ./download/"+searchFileName); //"+file.getAbsolutePath());
      		BufferedReader in = new BufferedReader(new InputStreamReader(proc.getInputStream()));
      		String curMd5Sum = in.readLine().split(" ")[0];
      		System.out.println("Downloaded File's md5sum: "+curMd5Sum);
      		
+     		
+     		//Edit-Subir STARTS
+     		String oldRefMd5Sum = "";
+     		String RefMd5Sum = "";
+     		int flag = 0;
+     		
+     		ArrayList<TrustFactorPlusIP> peerList = null;
+     		if(bestPeersList.size() != 0)
+     			peerList = bestPeersList;
+     		else if(goodPeersList.size() != 0)
+     			peerList = goodPeersList;
+     		else
+     			peerList = badPeersList;
+     			
+     		
+     		for(TrustFactorPlusIP bestPeer : peerList){
+     			PeerAddress p = bestPeer.getTrackerData().getPeerAddress();
+     			RefMd5Sum = md5SumHashMap.get(p);
+     			if(flag == 0){
+     				oldRefMd5Sum = RefMd5Sum;
+     				flag = 1;
+     			}
+     			if(oldRefMd5Sum != RefMd5Sum){
+     				System.out.println("May Day! May Day! Bad guy among Best Peers");
+     				HomeScreen.downloadStatus = "Download not successful as file integrity compromised";
+     				File file = new File("./download/"+searchFileName);
+     				if(file != null)
+     					file.delete();		
+     			}
+     		}
+     		
+     		
+     		if(curMd5Sum.equalsIgnoreCase(RefMd5Sum)){
+ 				System.out.println("DATA INTEGRITY VERIFIED");
+ 				
+ 			}else{
+ 				
+ 				for(TrustFactorPlusIP peer: trustFactorPlusIPArrayList){
+ 					PeerAddress p = peer.getTrackerData().getPeerAddress(); 
+ 					tmpMd5Sum = md5SumHashMap.get(p);
+ 					if(RefMd5Sum.equalsIgnoreCase(tmpMd5Sum)){
+ 	     				System.out.println("DATA INTEGRITY VERIFIED with Peer: "+p.getInetAddress());
+ 	     				//update status
+ 	     				peer.setMd5sumStatus(true);
+ 					}
+ 	     			else{
+ 	     				System.out.println("DATA INTEGRITY COMPROMISED with Peer: "+p.getInetAddress());
+ 	     				//update status
+ 	     				peer.setMd5sumStatus(false);
+ 	     			}
+ 				
+ 				}
+ 				
+ 				
+ 					//update trust factor
+ 				for(TrustFactorPlusIP peer : trustFactorPlusIPArrayList){
+ 					double a = 0.0;
+ 					for(Double downloadSpeed : peer.getDownloadSpeedList()){
+ 						a  += downloadSpeed * copyfileSizeToDownload; 						
+ 					}
+ 					
+ 					a = ((a/peer.getDownloadSpeedList().size())/BEST_CASE_a) * 10;	
+ 					double trustfactor_local = 0;
+ 					double b = peer.isMd5sumStatus() ? 10: 0;
+ 					double c = peer.getTrustFactor();
+ 					while(!feedback_set);
+ 					double d = (a*0.3 + b*0.5 + c*0.2);// 
+ 					int newNumTransactions = peer.getNumTransactions() + peer.getDownloadSpeedList().size();
+ 					double e = ((c * peer.getNumTransactions()) + (d * peer.getDownloadSpeedList().size()))/newNumTransactions;
+ 					
+ 					//trustfactor_local = (e * 0.7) + (feedback * 0.3);
+ 					
+ 					peer.setTrustFactor(e);
+ 					peer.setNumTransactions(newNumTransactions);
+ 				}
+ 				HomeScreen.downloadStatus = "download successful";
+ 			}
+     		
+     		
+ 				
+     			
+     		// Edit-Subir ENDS
+     		
+     		
+     		/*
      		int md5SumCheckCount = 0;
      		for(PeerAddress p: md5SumHashMap.keySet()){
      			tmpMd5Sum = md5SumHashMap.get(p);
+     			
      			//System.out.println("File's tmpMd5Sum: "+tmpMd5Sum+" from p: "+p.getInetAddress());
      			if(curMd5Sum.equalsIgnoreCase(tmpMd5Sum)){
      				System.out.println("DATA INTEGRITY VERIFIED with Peer: "+p.getInetAddress());
@@ -542,11 +654,16 @@ public class P2PControllerClientPeer{
      		}else{
      			System.out.println("================  DATAINTEGRITY COMPROMISED !!! ================ ");
      		}
+     		*/
      		
      	}else{
      		//System.out.println("futureTracker not retrieved");
      		System.out.println("No file with FileName: "+searchFileName+" with the participating peers");
      	}
+     	
+     	
+     	return trustFactorPlusIPArrayList;
+     	
     }
     
     public static void ShareFolder(){

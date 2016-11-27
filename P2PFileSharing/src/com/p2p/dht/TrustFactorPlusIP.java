@@ -6,20 +6,22 @@ import net.tomp2p.storage.TrackerData;
 
 public class TrustFactorPlusIP implements Comparable<TrustFactorPlusIP>{
 
-	private int trustFactor;
+	private double trustFactor;
 	private int numTransactions;
 	private String email;
 	private TrackerData trackerData;
 	private ArrayList<Double> downloadSpeedList;
+	private boolean md5sumStatus = false;
 	
-	public TrustFactorPlusIP(int trustFactor, int numTransactions, String email, TrackerData trackerData,
-			ArrayList<Double> downloadSpeedList) {
+	public TrustFactorPlusIP(double trustFactor, int numTransactions, String email, TrackerData trackerData,
+			ArrayList<Double> downloadSpeedList, boolean _md5sumStatus) {
 		super();
 		this.trustFactor = trustFactor;
 		this.numTransactions = numTransactions;
 		this.email = email;
 		this.trackerData = trackerData;
 		this.downloadSpeedList = downloadSpeedList;
+		this.md5sumStatus = _md5sumStatus;
 	}
 	
 	@Override
@@ -31,11 +33,11 @@ public class TrustFactorPlusIP implements Comparable<TrustFactorPlusIP>{
             (this.getTrustFactor() == o.getTrustFactor() ? 0 : 1)); 
 	}
 
-	public int getTrustFactor() {
+	public double getTrustFactor() {
 		return trustFactor;
 	}
 
-	public void setTrustFactor(int trustFactor) {
+	public void setTrustFactor(double trustFactor) {
 		this.trustFactor = trustFactor;
 	}
 
@@ -69,6 +71,14 @@ public class TrustFactorPlusIP implements Comparable<TrustFactorPlusIP>{
 
 	public void setDownloadSpeedList(ArrayList<Double> downloadSpeedList) {
 		this.downloadSpeedList = downloadSpeedList;
+	}
+
+	public boolean isMd5sumStatus() {
+		return md5sumStatus;
+	}
+
+	public void setMd5sumStatus(boolean md5sumStatus) {
+		this.md5sumStatus = md5sumStatus;
 	}	
 	
 }
