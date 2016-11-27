@@ -29,7 +29,24 @@ if($reqQueryType == "put"){
 		//echo "Email: ".$emailIdFromRequest;
 		//echo "Name: ".$nameFromRequest;
 		//echo "Password: ".$passwordFromRequest;
-		$sql = "INSERT INTO UserDetails(email,name,password) VALUES('$emailIdFromRequest','$nameFromRequest','$passwordFromRequest')";
+		
+		// Create the keypair
+		$res=openssl_pkey_new();
+
+		// Get private key
+		openssl_pkey_export($res, $privkey, "P2PFileSharing" );
+
+		// Get public key
+		$pubkey=openssl_pkey_get_details($res);
+		$pubkey=$pubkey["key"];
+		//var_dump($privkey);
+		//var_dump($pubkey);
+
+		$file = fopen($emailIdFromRequest.".private.key", "w");
+		fwrite($file, $privkey);
+		fclose($file);
+		
+		$sql = "INSERT INTO UserDetails(email,name,password,publicKey) VALUES('$emailIdFromRequest','$nameFromRequest','$passwordFromRequest','$pubkey')";
 		//echo $sql;
 		if($conn->query($sql) == true){
 			//echo "New record created successfully";
@@ -39,6 +56,16 @@ if($reqQueryType == "put"){
 			
 			$sql = "INSERT INTO UserEmailIP(email,ipaddress) VALUES('$emailIdFromRequest','$ipaddressFromRequest')";
 			$conn->query($sql);
+			
+			
+			$fileName = $emailIdFromRequest.".private.key";
+			$fileSize = filesize($fileName);
+			$file = fopen($fileName, "r");
+			$content = fread($file, $fileSize);
+			fclose($file);
+			unlink($fileName);
+			
+			//$content = chunk_split(base64_encode($content));
 			
 			$emailFrom = "sint.devteam@gmail.com"; //"contact@yoursite.com";
 			
@@ -52,14 +79,27 @@ if($reqQueryType == "put"){
 			$message .= "<br/>FullName: ".$nameFromRequest;
 			$message .= "<br/><br/>Use your email id to login to SINT!";
 			
+			$message .= "<br/><br/>We will send you private key file shortly. You have to use it in the SINT application for authenticity.";
+			
 			$message .= "<br/><br/>Cheers!";
 			$message .= "<br/>Team SINT";
-
+			
 			$headers = "MIME-Version: 1.0" . "\r\n"; 
 			$headers .= "Content-type:text/html; charset=utf-8" . "\r\n"; 
 			$headers .= "From: <$emailFrom>" . "\r\n";
-
+			
 			$retval = mail($emailIdFromRequest, $emailSubject, $message, $headers);
+
+			// send private key file in a seperate email
+			$emailSubject = "SINT | Your Private Key (Keep Safe)";
+			
+			$headers = "MIME-Version: 1.0" . "\r\n"; 
+			$headers .= "From: <$emailFrom>" . "\r\n";
+			$headers .= "Content-Type: multipart/mixed;\r\n";
+			$headers .= "Content-Disposition: attachment; filename=\"".$fileName."\"\r\n";
+			$emailMsg = $content;
+
+			$retval = mail($emailIdFromRequest, $emailSubject, $emailMsg, $headers);
 			if($retval == true){
 				echo "Success";
 			}else{
