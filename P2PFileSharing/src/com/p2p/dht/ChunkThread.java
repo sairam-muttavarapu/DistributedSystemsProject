@@ -3,15 +3,21 @@ package com.p2p.dht;
 
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.Socket;
+import java.security.PrivateKey;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 
 import net.tomp2p.storage.TrackerData;
+
+import com.p2p.security.CryptoException;
+import com.p2p.security.EncryptionUtil;
+import com.p2p.security.SymmetricEncryption;
 
 public class ChunkThread implements Runnable{
 	public Thread chunkThread;
@@ -20,14 +26,17 @@ public class ChunkThread implements Runnable{
 	private String reqKey;
 	private long chunkSize;
 	private TrustFactorPlusIP peerTrustFactorDetails;
+	private String privateKeyStr;
 	
-	public ChunkThread(String _threadName, TrackerData _trackerData, String _reqKey, long _chunkSize, TrustFactorPlusIP _peerTrustFactorDetails) {
+	public ChunkThread(String _threadName, TrackerData _trackerData, String _reqKey, long _chunkSize, 
+			TrustFactorPlusIP _peerTrustFactorDetails, String _privateKeyStr) {
 		// TODO Auto-generated constructor stub
 		threadName = _threadName;
 		trackerData = _trackerData;
 		reqKey = _reqKey;
 		chunkSize = _chunkSize;
 		peerTrustFactorDetails = _peerTrustFactorDetails;
+		privateKeyStr = _privateKeyStr;
 		System.out.println("ThreadName: "+threadName);
 		//System.out.println("ThreadName: "+threadName);
 	}
@@ -57,6 +66,20 @@ public class ChunkThread implements Runnable{
 	 		
 	 		InputStream inputStream = client.getInputStream();
 	 		
+	 		PrivateKey privateKey = EncryptionUtil.getPrivateKey(privateKeyStr);
+	 		byte[] encryptedAESKeyBytes = new byte[256];
+	 		
+	 		//final String AESKey = decrypt(cipherText, privKey);
+	 		String AESKey = " "; // it has to retrieved from FileServerThread
+	 		
+	 		// waiting for seeder to send AESKey
+	 		if((inputStream.read(encryptedAESKeyBytes))!= -1){
+	 			AESKey = EncryptionUtil.decrypt(encryptedAESKeyBytes, privateKey);
+	 		}
+	 		
+	 		dataOutputStream.writeBytes("Ok\n");
+	 		System.out.println("Sending ACK for encryptedAESKey: "+AESKey);
+	 		
 	 		System.out.println("chunkSize long: "+chunkSize);
 	 		System.out.println("chunkSize long typecasted with int: "+(int)chunkSize);
 	 		
@@ -70,7 +93,9 @@ public class ChunkThread implements Runnable{
 	 		if(!folder.exists()){
 	 			folder.mkdir();
 	 		}
- 			
+	 		
+	 		//final String AESKey = EncryptionUtil.randomAESKeyGenerator();
+	 		
 	 		FileOutputStream outputStream = new FileOutputStream(new File("./download/tmp_"+reqKey.split("_")[0]+"/tmp_"+reqKey),true);
 	 		
 	 		while(chunkSizeRemaining > 0){
@@ -91,16 +116,49 @@ public class ChunkThread implements Runnable{
 		 				System.out.println("Inside proper chunks, numBytesRead: "+numBytesRead);
 		 				outputStream.write(chunkSizeBytes);
 		 			}*/
-		 			//System.out.println("Inside chunks, numBytesRead: "+numBytesRead);
+		 			
+	 				//System.out.println("Inside chunks, numBytesRead: "+numBytesRead);
 	 				byte[] chunkSizeBytesRead = Arrays.copyOf(chunkSizeBytes, numBytesRead);
+	 				// add decrypt call to decrypt the incoming bytes and save output bytes using outputstream into file
+	 				
+	 				byte[] outputBytes = new byte[chunkSizeBytesRead.length];
+	 				
+	 				/*try{
+	 					outputBytes = SymmetricEncryption.decrypt(AESKey, chunkSizeBytesRead);
+	 					  //Symmetric.decrypt(originalText, encryptedFile, decryptedFile);
+	 				}catch (CryptoException ex) {
+	 				      System.out.println(ex.getMessage());
+	 				      ex.printStackTrace();
+	 				}*/
+	 				
+	 				//outputStream.write(chunkSizeBytesRead);
 	 				outputStream.write(chunkSizeBytesRead);
-
 			 		
 			 		//System.out.println("Leaving if condition");
 		 		}
 	 			chunkSizeRemaining -= numBytesRead;
 	 		}
+	 		
 	 		outputStream.close();
+	 		/*File inputFile = new File("./download/tmp_"+reqKey.split("_")[0]+"/tmp_"+reqKey);
+	 		File outputFile = new File("./download/tmp_"+reqKey+"_dec");
+	 		FileInputStream finStream = new FileInputStream(inputFile);
+	 		FileOutputStream foutStream = new FileOutputStream(outputFile);
+	        byte[] inputBytes = new byte[(int) inputFile.length()];
+	        finStream.read(inputBytes);
+	        byte[] outputBytes = new byte[(int) inputFile.length()];
+				
+			try{
+				outputBytes = SymmetricEncryption.decrypt(AESKey, inputBytes);
+				  //Symmetric.decrypt(originalText, encryptedFile, decryptedFile);
+			}catch (CryptoException ex) {
+			      System.out.println(ex.getMessage());
+			      ex.printStackTrace();
+			}
+	 		
+			foutStream.write(outputBytes);
+			foutStream.close();*/
+			
 	 		//Thread.currentThread().destroy();
 
 	        //System.out.println("Server says ");

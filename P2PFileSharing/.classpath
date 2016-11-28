@@ -32,6 +32,8 @@
 	<classpathentry kind="lib" path="hibernate-lib/jboss-logging-3.3.0.Final.jar"/>
 	<classpathentry kind="lib" path="hibernate-lib/jsr250-api-1.0.jar"/>
 	<classpathentry kind="lib" path="hibernate-lib/mysql-connector-java-5.1.40-bin.jar"/>
+	<classpathentry kind="lib" path="security-lib/org-apache-commons-codec.jar"/>
+	<classpathentry kind="lib" path="security-lib/sun.misc.BASE64Decoder.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/org.eclipse.swt.Linux"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

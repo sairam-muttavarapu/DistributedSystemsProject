@@ -5,10 +5,16 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.PublicKey;
 import java.util.Arrays;
+
+import com.p2p.security.EncryptionUtil;
+import com.p2p.security.SymmetricEncryption;
+import com.p2p.utils.HTTPRequestResponseHandler;
 
 
 public class FileServerThread implements Runnable{
@@ -44,6 +50,7 @@ public class FileServerThread implements Runnable{
 				String msgClient = recvBuffReader.readLine();
 				//DataInputStream in = new DataInputStream(connSocket.getInputStream());
 	            //System.out.println(in.readUTF());
+				
 				
 				System.out.println("Client requested: "+msgClient);
 				
@@ -87,6 +94,48 @@ public class FileServerThread implements Runnable{
 				}else if(msgClient.contains("_Part")){
 					//FileReader reads text files in the default encoding.
     				
+					String reqParams = "queryType=get&service=QueryPubKey&ipaddress="+connSocket.getInetAddress().getHostAddress();
+					String resultsStr = HTTPRequestResponseHandler.doHTTPPostRequest(reqParams);
+					String statusStr = resultsStr.split("_")[0];
+					
+					String publicKey = "";
+					if(statusStr.equalsIgnoreCase("Success")){
+
+						if(resultsStr.split("_").length == 2){
+							publicKey = resultsStr.split("_")[1];
+							//System.out.println("Retrieved publicKey for the seeder: "+publicKey);
+						}
+						
+					}else if(statusStr.equalsIgnoreCase("Failure")){
+						System.out.println("Unable to retrieve publicKey from the server");
+					}else if(statusStr.equalsIgnoreCase("Error")){
+						System.out.println("Unknown Error Occurred. Try after sometime");
+					}
+					
+					PublicKey pubKey = EncryptionUtil.getPublicKey(publicKey);
+					
+					//final String AESKey = EncryptionUtil.randomAESKeyGenerator();
+					final String AESKey = "Mary has one cat";
+					System.out.println("AESKey being sent: "+AESKey);
+					//Encrypting AESKey using public key of the downloader
+					final byte[] encryptedAESKey = EncryptionUtil.encrypt(AESKey, pubKey);
+					
+					dataOutputStream.write(encryptedAESKey); // Sending encryptedAESKey to the downloading peer
+					
+					int numReadBytes = 0;
+					byte[] ackBytes = new byte[5];
+					String ackStr = recvBuffReader.readLine();
+					
+					/*if((numReadBytes = recvBuffReader.read(ackBytes)) != -1){
+						String str = new String(ackBytes, "UTF-8"); // for UTF-8 encoding
+						ackStr = str;
+					}*/
+					
+					System.out.println("ackStr received: "+ackStr);
+					if(ackStr.startsWith("Ok")){
+						System.out.println("ACK came for encrypted AES Key");
+					}
+					
     				int partNumber = Integer.parseInt(msgClient.split("Part")[1]);
     				// Wrapping FileReader in BufferedReader.
     				
@@ -123,7 +172,26 @@ public class FileServerThread implements Runnable{
     		 			}*/
     		 			System.out.println("Inside chunks, numBytesRead: "+numBytesRead);
     		 			byte[] chunkSizeBytesRead = Arrays.copyOf(chunkSizeBytes, numBytesRead);
+    		 			String inStr = new String(chunkSizeBytesRead, "UTF-8"); // for UTF-8 encoding
+    		 			System.out.println("inStr: "+inStr);
+    		 			
+    		 			byte[] outputBytes = new byte[chunkSizeBytesRead.length];
+    		 			
+    		 			// add encrypt call to encrypt the bytes read and write output bytes using outputstream onto socket
+    		 			  
+    		 			try{
+    		 				//Symmetric.encrypt(originalText, inputFile, encryptedFile);
+    		 				outputBytes = SymmetricEncryption.encrypt(AESKey, chunkSizeBytesRead);
+    				    }catch (Exception ex) {
+    				        System.out.println(ex.getMessage());
+    				        ex.printStackTrace();
+    				    }
+    		 			String outStr = new String(outputBytes, "UTF-8"); // for UTF-8 encoding
+    		 			System.out.println("outStr: "+outStr);
+    		 			//FileOutputStream foutStream = new FileOutputStream(new File("tmp_"+partNumber));
+    		 			//foutStream.write(outputBytes);
 	    				dataOutputStream.write(chunkSizeBytesRead);
+	    				//dataOutputStream.write(outputBytes);
 
     				}
     				

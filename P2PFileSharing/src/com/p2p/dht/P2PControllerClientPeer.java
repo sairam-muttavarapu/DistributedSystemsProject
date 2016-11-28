@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.hibernate.Session;
@@ -60,7 +61,7 @@ public class P2PControllerClientPeer{
         System.out.println("Inside P2PControllerClientPeer Constructor");
     }
 
-    public static ArrayList<TrustFactorPlusIP> GetFile(String searchFileName) throws NumberFormatException, Exception{
+    public static ArrayList<TrustFactorPlusIP> GetFile(String searchFileName, String privateKeyFilePath) throws NumberFormatException, Exception{
     	
     	ArrayList<TrustFactorPlusIP> trustFactorPlusIPArrayList = new ArrayList<TrustFactorPlusIP>();
     	
@@ -294,6 +295,16 @@ public class P2PControllerClientPeer{
   			}
   			
     		
+    		String privKeyText = new Scanner(new File(privateKeyFilePath)).useDelimiter("\\A").next();
+	        //privKeyText = privKeyText.replace("-----BEGIN PRIVATE KEY-----\n", "");
+	        //privKeyText = privKeyText.replace("-----END PRIVATE KEY-----", "");
+    		System.out.println("PrivateKey retrieved: "+privKeyText);
+    		
+    		System.out.println("privateKeyStr in getPrivateKey() before replacing: "+privKeyText);
+    		privKeyText = privKeyText.replace("-----BEGIN PRIVATE KEY-----", "");
+    		privKeyText = privKeyText.replace("-----END PRIVATE KEY-----", "");
+    		System.out.println("privateKeyStr in getPrivateKey() after replacing: "+privKeyText);
+    		
   			while(numOfChunksFromBestPeers > 0){
   				for(TrustFactorPlusIP bestPeer : bestPeersList){
   					System.out.println("I am a Best Peer");
@@ -323,7 +334,7 @@ public class P2PControllerClientPeer{
       				System.out.println(partNumber+" ClientPeer: ChunkSize: "+ chunkSize);
       				chunkSizeArray[partNumber] = chunkSize;
       				
-      				chunkThread[partNumber] = new ChunkThread("chunkThread", bestPeer.getTrackerData(), searchFileName+"_Part"+partNumber, chunkSize, bestPeer);
+      				chunkThread[partNumber] = new ChunkThread("chunkThread", bestPeer.getTrackerData(), searchFileName+"_Part"+partNumber, chunkSize, bestPeer, privKeyText);
       				if(chunkThread[partNumber] != null)
       				{
       					chunkThread[partNumber].start();
@@ -367,7 +378,7 @@ public class P2PControllerClientPeer{
       				System.out.println(partNumber+" ClientPeer: ChunkSize: "+ chunkSize);
       				chunkSizeArray[partNumber] = chunkSize;
       				
-      				chunkThread[partNumber] = new ChunkThread("chunkThread", goodPeer.getTrackerData(), searchFileName+"_Part"+partNumber, chunkSize, goodPeer);
+      				chunkThread[partNumber] = new ChunkThread("chunkThread", goodPeer.getTrackerData(), searchFileName+"_Part"+partNumber, chunkSize, goodPeer, privKeyText);
       				if(chunkThread[partNumber] != null)
       				{
       					chunkThread[partNumber].start();
@@ -407,7 +418,7 @@ public class P2PControllerClientPeer{
       				System.out.println(partNumber+" ClientPeer: ChunkSize: "+ chunkSize);
       				chunkSizeArray[partNumber] = chunkSize;
       				
-      				chunkThread[partNumber] = new ChunkThread("chunkThread", badPeer.getTrackerData(), searchFileName+"_Part"+partNumber, chunkSize, badPeer);
+      				chunkThread[partNumber] = new ChunkThread("chunkThread", badPeer.getTrackerData(), searchFileName+"_Part"+partNumber, chunkSize, badPeer, privKeyText);
       				if(chunkThread[partNumber] != null)
       				{
       					chunkThread[partNumber].start();
@@ -495,12 +506,12 @@ public class P2PControllerClientPeer{
 				combineFile.write(filePartBuf);
 				inputStream.close();
 				
-				tmpFile.delete(); // Deleting the tmp file part after writing into the actual file
+				//tmpFile.delete(); // Deleting the tmp file part after writing into the actual file
 				
 			}
 			combineFile.close();
 			
-			folder.delete(); // this will work only if the folder is empty
+			//folder.delete(); // this will work only if the folder is empty
 			System.out.println("\n================= All Parts joined, FILE DOWNLOADED SUCCESSFULLY to download folder ==============");
 			System.out.println("\nChecking MD5SUM FILE INTEGRITY CHECK...");
 			

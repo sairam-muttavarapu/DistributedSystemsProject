@@ -34,7 +34,7 @@ if($reqQueryType == "put"){
 		$res=openssl_pkey_new();
 
 		// Get private key
-		openssl_pkey_export($res, $privkey, "P2PFileSharing" );
+		openssl_pkey_export($res, $privkey);
 
 		// Get public key
 		$pubkey=openssl_pkey_get_details($res);
@@ -42,11 +42,17 @@ if($reqQueryType == "put"){
 		//var_dump($privkey);
 		//var_dump($pubkey);
 
-		$file = fopen($emailIdFromRequest.".private.key", "w");
+		$file = fopen($emailIdFromRequest."_private.key", "w");
 		fwrite($file, $privkey);
 		fclose($file);
 		
+		$file = fopen($emailIdFromRequest."_public.key", "w");
+		fwrite($file, $pubkey);
+		fclose($file);
+		
+		
 		$sql = "INSERT INTO UserDetails(email,name,password,publicKey) VALUES('$emailIdFromRequest','$nameFromRequest','$passwordFromRequest','$pubkey')";
+
 		//echo $sql;
 		if($conn->query($sql) == true){
 			//echo "New record created successfully";
@@ -57,13 +63,12 @@ if($reqQueryType == "put"){
 			$sql = "INSERT INTO UserEmailIP(email,ipaddress) VALUES('$emailIdFromRequest','$ipaddressFromRequest')";
 			$conn->query($sql);
 			
-			
-			$fileName = $emailIdFromRequest.".private.key";
+			$fileName = $emailIdFromRequest."_private.key";
 			$fileSize = filesize($fileName);
 			$file = fopen($fileName, "r");
 			$content = fread($file, $fileSize);
 			fclose($file);
-			unlink($fileName);
+			//unlink($fileName);
 			
 			//$content = chunk_split(base64_encode($content));
 			
@@ -108,7 +113,7 @@ if($reqQueryType == "put"){
 
 		}else{
 			//echo "Error: " . $sql . "<br>" . mysqli_error($conn);
-			echo "Failure";
+			echo "Failure" ;
 		}
 	}else if($reqService == "ForgotPassword"){
 		
@@ -183,6 +188,39 @@ if($reqQueryType == "put"){
 				echo "Failure";
 			}
 			break;
+			
+		case "QueryPubKey":
+			$ipaddressFromRequest  = $_POST["ipaddress"];
+			$sql = "SELECT email FROM UserEmailIP where ipaddress='$ipaddressFromRequest'";
+			$result = $conn->query($sql);
+			
+			
+			if ($result->num_rows > 0) {
+				
+				$row = $result->fetch_assoc();
+				$emailRetrieved = $row["email"];
+				
+				$sql = "SELECT publicKey FROM UserDetails where email='$emailRetrieved'";
+				//echo "I am inside Email";
+				$result = $conn->query($sql);
+				
+				if ($result->num_rows > 0) {
+					// output data of each row
+					$row = $result->fetch_assoc();
+					echo "Success_".$row["publicKey"];
+					/*$file = fopen("test_pub.key", "w");
+					fwrite($file, "Success_".$row["publicKey"]);
+					fclose($file);*/
+				} else {
+					//echo "0 results";
+					echo "Failure";
+				}
+			}else{
+				//echo "0 results";
+				echo "Failure";
+			}
+			break;
+			
 		case "QuerySecurityCode":
 			$emailIdFromRequest  = $_POST["email"];
 			$securityCodeFromRequest  = $_POST["securityCode"];
@@ -238,6 +276,7 @@ if($reqQueryType == "put"){
 			}
 			
 			break;
+			
 		case "Login":
 			//echo "I am inside Login";
 			$emailIdFromRequest  = $_POST["email"];
@@ -263,6 +302,7 @@ if($reqQueryType == "put"){
 				echo "Failure";
 			}
 			break;
+			
 		case "TrustDetails":
 			//echo "I am inside Trust"; // gets ipaddress, retrieves email, 
 			$ipaddressFromRequest = $_POST["ipaddress"];
@@ -285,6 +325,7 @@ if($reqQueryType == "put"){
 				echo "Failure";
 			}
 			break;
+			
 		case "IPList":
 			$sql = "SELECT ipaddress FROM UserEmailIP";
 			//echo "I am inside Email";
