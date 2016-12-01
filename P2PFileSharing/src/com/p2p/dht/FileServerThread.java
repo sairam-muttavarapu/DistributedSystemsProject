@@ -154,6 +154,15 @@ public class FileServerThread implements Runnable{
      				// If it is the last chunk, fileSizeRemaining will be less than set CHUNK_SIZE_UPLOAD, so using fileSizeRemaining for the last chunk
      				chunkSize = (fileSizeRemaining > P2PControllerClientPeer.CHUNK_SIZE_UPLOAD) ? (P2PControllerClientPeer.CHUNK_SIZE_UPLOAD): fileSizeRemaining; 
      				System.out.println("chunkSize: "+ chunkSize);
+     				
+      				boolean enableAESPadding = false;
+      				if(chunkSize != P2PControllerClientPeer.CHUNK_SIZE_UPLOAD){
+      					enableAESPadding = true;
+      					double chunkSizeDivBy16 = chunkSize/16.0;
+      					chunkSizeDivBy16 = Math.ceil(chunkSizeDivBy16);
+      					chunkSize = 16*(int)chunkSizeDivBy16;
+      				}
+     				
      				fis.skip(partNumber*P2PControllerClientPeer.CHUNK_SIZE_UPLOAD); // skipping parts not requested, seeking to the part requested
      				
      				byte[] chunkSizeBytes = new byte[(int)chunkSize];
@@ -172,8 +181,8 @@ public class FileServerThread implements Runnable{
     		 			}*/
     		 			System.out.println("Inside chunks, numBytesRead: "+numBytesRead);
     		 			byte[] chunkSizeBytesRead = Arrays.copyOf(chunkSizeBytes, numBytesRead);
-    		 			String inStr = new String(chunkSizeBytesRead, "UTF-8"); // for UTF-8 encoding
-    		 			System.out.println("inStr: "+inStr);
+    		 			//String inStr = new String(chunkSizeBytesRead, "UTF-8"); // for UTF-8 encoding
+    		 			//System.out.println("inStr: "+inStr);
     		 			
     		 			byte[] outputBytes = new byte[chunkSizeBytesRead.length];
     		 			
@@ -181,17 +190,19 @@ public class FileServerThread implements Runnable{
     		 			  
     		 			try{
     		 				//Symmetric.encrypt(originalText, inputFile, encryptedFile);
-    		 				outputBytes = SymmetricEncryption.encrypt(AESKey, chunkSizeBytesRead);
+    		 				outputBytes = SymmetricEncryption.encrypt(AESKey, chunkSizeBytesRead, enableAESPadding);
     				    }catch (Exception ex) {
     				        System.out.println(ex.getMessage());
     				        ex.printStackTrace();
     				    }
-    		 			String outStr = new String(outputBytes, "UTF-8"); // for UTF-8 encoding
-    		 			System.out.println("outStr: "+outStr);
+    		 			
+    		 			System.out.println("Output bytes length: "+ outputBytes.length);
+    		 		//	String outStr = new String(outputBytes, "UTF-8"); // for UTF-8 encoding
+    		 			//System.out.println("outStr: "+outStr);
     		 			//FileOutputStream foutStream = new FileOutputStream(new File("tmp_"+partNumber));
     		 			//foutStream.write(outputBytes);
-	    				dataOutputStream.write(chunkSizeBytesRead);
-	    				//dataOutputStream.write(outputBytes);
+	    				//dataOutputStream.write(chunkSizeBytesRead);
+	    				dataOutputStream.write(outputBytes);
 
     				}
     				

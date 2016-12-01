@@ -13,16 +13,17 @@ public class Firewall{
 	            try(BufferedReader br = new BufferedReader(new FileReader("tcp_security_logs"))){
 	              StringBuilder sb = new StringBuilder();
 	              String line = br.readLine();
+	              String[] parts = new String[2];
 	              if (line != null){
-		                String[] parts = line.split(":");
+		                parts = line.split(":");
 		                //System.out.println("now : "+parts[1]+"prev : "+ prevIp);
-		                if (parts[1].equals(prevIp)== false){
+		               
+		                /*if (parts[1].equals(prevIp)== false){
 			                  //block 
 			                  System.out.println("Blocking " + parts[1]);
 			                  Firewall.executeCommand("sudo iptables -A INPUT -p tcp --dport 4003 -s "+parts[1]+" -j DROP");
 			                  Firewall.executeCommand("sudo iptables-save");
-		                }
-		                prevIp = parts[1];
+		                }*/
 	              }
 	              
 	              int singleSynFloodIndex = 0;
@@ -51,13 +52,28 @@ public class Firewall{
 	              
 	              if(singleSynFloodIndex > 300 || randomSynFloodIndex > 300){
 	            	  System.out.println("Possible SYN Flooding on port 4003");
+	            	  if (parts[1].equals(prevIp)== false){
+		                  //block 
+		                  System.out.println("Blocking " + parts[1]);
+		                  Firewall.executeCommand("sudo iptables -D INPUT -p tcp --dport 4003 -s "+parts[1]+" -j ACCEPT");
+		                  Firewall.executeCommand("sudo iptables -A INPUT -p tcp --dport 4003 -s "+parts[1]+" -j DROP");
+		                  Firewall.executeCommand("sudo iptables-save");
+	            	  }
+	            	  
 	              }
 	              
 	              if(ackFloodIndex > 4000){
 	            	  System.out.println("Possible ACK Flooding on port 4003");
+	            	  if (parts[1].equals(prevIp)== false){
+		                  //block 
+		                  System.out.println("Blocking " + parts[1]);
+		                  Firewall.executeCommand("sudo iptables -D INPUT -p tcp --dport 4003 -s "+parts[1]+" -j ACCEPT");
+		                  Firewall.executeCommand("sudo iptables -A INPUT -p tcp --dport 4003 -s "+parts[1]+" -j DROP");
+		                  Firewall.executeCommand("sudo iptables-save");
+	            	  }
 	              }
 	              
-	              
+	              prevIp = parts[1];
 	              myThread.sleep(30000);
 	              
 	            }catch(Exception e){

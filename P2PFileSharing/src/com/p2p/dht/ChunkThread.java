@@ -27,9 +27,10 @@ public class ChunkThread implements Runnable{
 	private long chunkSize;
 	private TrustFactorPlusIP peerTrustFactorDetails;
 	private String privateKeyStr;
+	private boolean enableAESPadding;
 	
 	public ChunkThread(String _threadName, TrackerData _trackerData, String _reqKey, long _chunkSize, 
-			TrustFactorPlusIP _peerTrustFactorDetails, String _privateKeyStr) {
+			TrustFactorPlusIP _peerTrustFactorDetails, String _privateKeyStr, boolean _enableAESPadding) {
 		// TODO Auto-generated constructor stub
 		threadName = _threadName;
 		trackerData = _trackerData;
@@ -37,6 +38,7 @@ public class ChunkThread implements Runnable{
 		chunkSize = _chunkSize;
 		peerTrustFactorDetails = _peerTrustFactorDetails;
 		privateKeyStr = _privateKeyStr;
+		enableAESPadding = _enableAESPadding;
 		System.out.println("ThreadName: "+threadName);
 		//System.out.println("ThreadName: "+threadName);
 	}
@@ -140,24 +142,30 @@ public class ChunkThread implements Runnable{
 	 		}
 	 		
 	 		outputStream.close();
-	 		/*File inputFile = new File("./download/tmp_"+reqKey.split("_")[0]+"/tmp_"+reqKey);
-	 		File outputFile = new File("./download/tmp_"+reqKey+"_dec");
+	 		File inputFile = new File("./download/tmp_"+reqKey.split("_")[0]+"/tmp_"+reqKey);
+	 		//File outputFile = new File("./download/tmp_"+reqKey+"_dec");
 	 		FileInputStream finStream = new FileInputStream(inputFile);
-	 		FileOutputStream foutStream = new FileOutputStream(outputFile);
+	 		
 	        byte[] inputBytes = new byte[(int) inputFile.length()];
 	        finStream.read(inputBytes);
+	        finStream.close();
+	        
+	        FileOutputStream foutStream = new FileOutputStream(inputFile);
 	        byte[] outputBytes = new byte[(int) inputFile.length()];
 				
 			try{
-				outputBytes = SymmetricEncryption.decrypt(AESKey, inputBytes);
+				outputBytes = SymmetricEncryption.decrypt(AESKey, inputBytes, enableAESPadding);
 				  //Symmetric.decrypt(originalText, encryptedFile, decryptedFile);
 			}catch (CryptoException ex) {
 			      System.out.println(ex.getMessage());
 			      ex.printStackTrace();
 			}
 	 		
+			//String outStr = new String(outputBytes, "UTF-8"); // for UTF-8 encoding
+ 			//System.out.println("outStr: "+outStr);
+			
 			foutStream.write(outputBytes);
-			foutStream.close();*/
+			foutStream.close();
 			
 	 		//Thread.currentThread().destroy();
 

@@ -17,7 +17,8 @@ import javax.crypto.spec.*;
 
 public class SymmetricEncryption {
     private static final String ALGORITHM = "AES";
-    private static final String TRANSFORMATION = "AES";
+    private static final String TRANSFORMATION_NOPADDING = "AES/ECB/NoPadding";
+    private static final String TRANSFORMATION_WITHPADDING = "AES";
  
     /*private static void doCrypto(int cipherMode, String key, File inputFile,
             File outputFile) throws CryptoException {
@@ -45,11 +46,16 @@ public class SymmetricEncryption {
         }
     }*/
     
-    private static byte[] doCrypto(int cipherMode, String key, byte[] inputBytes) throws CryptoException {
+    private static byte[] doCrypto(int cipherMode, String key, byte[] inputBytes, boolean enableAESPadding) throws CryptoException {
         
     	try {
             Key secretKey = new SecretKeySpec(key.getBytes(), ALGORITHM);
-            Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+            Cipher cipher = Cipher.getInstance(TRANSFORMATION_NOPADDING);
+            
+            if(enableAESPadding){
+            	cipher = Cipher.getInstance(TRANSFORMATION_WITHPADDING);	
+            }
+            
             cipher.init(cipherMode, secretKey);
             
             byte[] outputBytes = cipher.doFinal(inputBytes);
@@ -70,14 +76,14 @@ public class SymmetricEncryption {
         doCrypto(Cipher.DECRYPT_MODE, key, inputFile, outputFile);
     }*/
     
-    public static byte[] encrypt(String key, byte[] inputBytes)
+    public static byte[] encrypt(String key, byte[] inputBytes, boolean enableAESPadding)
             throws CryptoException {
-        return doCrypto(Cipher.ENCRYPT_MODE, key, inputBytes);
+        return doCrypto(Cipher.ENCRYPT_MODE, key, inputBytes, enableAESPadding);
     }
  
-    public static byte[] decrypt(String key, byte[] inputBytes)
+    public static byte[] decrypt(String key, byte[] inputBytes, boolean enableAESPadding)
             throws CryptoException {
-        return doCrypto(Cipher.DECRYPT_MODE, key, inputBytes);
+        return doCrypto(Cipher.DECRYPT_MODE, key, inputBytes, enableAESPadding);
     }
 }
     

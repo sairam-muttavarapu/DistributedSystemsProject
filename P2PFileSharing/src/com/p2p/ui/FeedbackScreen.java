@@ -66,6 +66,7 @@ public class FeedbackScreen {
 	 */
 	protected void createContents() {
 		shlFeedback = new Shell();
+		shlFeedback.setLocation(450,200);
 		shlFeedback.setSize(450, 300);
 		shlFeedback.setText("Feedback");
 		
@@ -99,10 +100,10 @@ public class FeedbackScreen {
 						}
 					}else{
 						if(peer.isMd5sumStatus()){
-							trustfactor_local = (double)(peer.getTrustFactor() * 0.9) + (double)(10 * 0.1);	// 10 feedback weight
+							trustfactor_local = (double)(peer.getTrustFactor() * 0.9) + (double)(Integer.parseInt(txtFeedback.getText()) * 0.1);	// 10 feedback weight
 						}else{
 							// user's feedback weight
-							trustfactor_local = (double)(peer.getTrustFactor() * 0.9) + (double)(Integer.parseInt(txtFeedback.getText()) * 0.1);
+							trustfactor_local = (double)(peer.getTrustFactor() * 0.9) + (double)(0 * 0.1);
 						}
 					}
 					
@@ -123,10 +124,10 @@ public class FeedbackScreen {
 				}
 					
 				//navigate back to homescreen
-				String [] params = new String[2];
+				String [] params = new String[3];
 				params[0] = "feedBackScreen";
 				params[1] = incomingStrArr[1];
-				
+				params[2] = incomingStrArr[2];
 				HomeScreen.updateIncomingShell(shlFeedback, params);
 				HomeScreen homeScreen = new HomeScreen();
 				homeScreen.open();

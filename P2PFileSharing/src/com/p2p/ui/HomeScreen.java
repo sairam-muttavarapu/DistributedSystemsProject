@@ -90,9 +90,10 @@ public class HomeScreen {
 							lblStatus.setText("No file with given name found");
 						}else{
 							
-							String args[] = new String[2];
+							String args[] = new String[3];
 							args[0] = downloadStatus;
 							args[1] = incomingArgs[1];
+							args[2] = txtTxtprivatekeyfile.getText();
 							FeedbackScreen.updateIncomingShell(shlHome, trustFactorPlusIPArrayList, args); 
 							FeedbackScreen feedback = new FeedbackScreen();
 							feedback.open();
@@ -190,6 +191,15 @@ public class HomeScreen {
 		txtTxtprivatekeyfile = new Text(shlHome, SWT.BORDER);
 		txtTxtprivatekeyfile.setBounds(79, 84, 179, 25);
 
+		if(incomingArgs.length == 3){
+			if(incomingArgs[2] != null){
+				txtTxtprivatekeyfile.setText(incomingArgs[2]);
+				txtSearchfilename.setEnabled(true);
+				btnDownload.setEnabled(true);
+				btnSync.setEnabled(true);
+			}
+		}
+		
 		shlHome.open();
 		shlHome.layout();
 		while (!shlHome.isDisposed()) {

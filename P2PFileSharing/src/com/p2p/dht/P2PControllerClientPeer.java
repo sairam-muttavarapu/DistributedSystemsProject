@@ -46,8 +46,8 @@ public class P2PControllerClientPeer{
     
     public static final long CHUNK_ONE_KB = 1*1024;
     public static final long CHUNK_ONE_MB = 1*1024*1024;
-    public static final long CHUNK_FIFTY_MB = 50*1024*1024;
-    public static final long CHUNK_HUNDRED_MB = 50*1024*1024;
+    public static final long CHUNK_FIFTY_MB = 30*1024*1024;
+    public static final long CHUNK_HUNDRED_MB = 30*1024*1024;
     
     public static final long BEST_CASE_CHUNK_1KB = 256*1024; //256 KBPS speed * 1 KB file size - best case factor 
     public static final long BEST_CASE_CHUNK_1MB = 10*1024*1024; //10 MBPS speed * 20 MB file size - best case factor
@@ -330,11 +330,19 @@ public class P2PControllerClientPeer{
       				// If fileSizeRemaining is greater than CHUNK_SIZE_DOWNLOAD, then retain CHUNK_SIZE_DOWNLOAD
       				// If it is the last chunk, fileSizeRemaining will be less than set CHUNK_SIZE_DOWNLOAD, so using fileSizeRemaining for the last chunk
       				chunkSize = (fileSizeRemaining > CHUNK_SIZE_DOWNLOAD) ? (CHUNK_SIZE_DOWNLOAD): fileSizeRemaining;
+      				boolean enableAESPadding = false;
+      				if(chunkSize != CHUNK_SIZE_DOWNLOAD){
+      					enableAESPadding = true;
+      					double chunkSizeDivBy16 = chunkSize/16.0;
+      					chunkSizeDivBy16 = Math.ceil(chunkSizeDivBy16);
+      					chunkSize = 16*(int)chunkSizeDivBy16;
+      				}
       				
       				System.out.println(partNumber+" ClientPeer: ChunkSize: "+ chunkSize);
       				chunkSizeArray[partNumber] = chunkSize;
       				
-      				chunkThread[partNumber] = new ChunkThread("chunkThread", bestPeer.getTrackerData(), searchFileName+"_Part"+partNumber, chunkSize, bestPeer, privKeyText);
+      				
+      				chunkThread[partNumber] = new ChunkThread("chunkThread", bestPeer.getTrackerData(), searchFileName+"_Part"+partNumber, chunkSize, bestPeer, privKeyText, enableAESPadding);
       				if(chunkThread[partNumber] != null)
       				{
       					chunkThread[partNumber].start();
@@ -375,10 +383,18 @@ public class P2PControllerClientPeer{
       				// If it is the last chunk, fileSizeRemaining will be less than set CHUNK_SIZE_DOWNLOAD, so using fileSizeRemaining for the last chunk
       				chunkSize = (fileSizeRemaining > CHUNK_SIZE_DOWNLOAD) ? (CHUNK_SIZE_DOWNLOAD): fileSizeRemaining;
       				
+      				boolean enableAESPadding = false;
+      				if(chunkSize != CHUNK_SIZE_DOWNLOAD){
+      					enableAESPadding = true;
+      					double chunkSizeDivBy16 = chunkSize/16.0;
+      					chunkSizeDivBy16 = Math.ceil(chunkSizeDivBy16);
+      					chunkSize = 16*(int)chunkSizeDivBy16;
+      				}
+      				
       				System.out.println(partNumber+" ClientPeer: ChunkSize: "+ chunkSize);
       				chunkSizeArray[partNumber] = chunkSize;
       				
-      				chunkThread[partNumber] = new ChunkThread("chunkThread", goodPeer.getTrackerData(), searchFileName+"_Part"+partNumber, chunkSize, goodPeer, privKeyText);
+      				chunkThread[partNumber] = new ChunkThread("chunkThread", goodPeer.getTrackerData(), searchFileName+"_Part"+partNumber, chunkSize, goodPeer, privKeyText, enableAESPadding);
       				if(chunkThread[partNumber] != null)
       				{
       					chunkThread[partNumber].start();
@@ -418,7 +434,15 @@ public class P2PControllerClientPeer{
       				System.out.println(partNumber+" ClientPeer: ChunkSize: "+ chunkSize);
       				chunkSizeArray[partNumber] = chunkSize;
       				
-      				chunkThread[partNumber] = new ChunkThread("chunkThread", badPeer.getTrackerData(), searchFileName+"_Part"+partNumber, chunkSize, badPeer, privKeyText);
+      				boolean enableAESPadding = false;
+      				if(chunkSize != CHUNK_SIZE_DOWNLOAD){
+      					enableAESPadding = true;
+      					double chunkSizeDivBy16 = chunkSize/16.0;
+      					chunkSizeDivBy16 = Math.ceil(chunkSizeDivBy16);
+      					chunkSize = 16*(int)chunkSizeDivBy16;
+      				}
+      				
+      				chunkThread[partNumber] = new ChunkThread("chunkThread", badPeer.getTrackerData(), searchFileName+"_Part"+partNumber, chunkSize, badPeer, privKeyText, enableAESPadding);
       				if(chunkThread[partNumber] != null)
       				{
       					chunkThread[partNumber].start();
@@ -501,17 +525,17 @@ public class P2PControllerClientPeer{
 				File tmpFile = new File("./download/tmp_"+searchFileName+"/tmp_"+searchFileName+"_Part"+i);
 				
 				FileInputStream inputStream = new FileInputStream(tmpFile);
-				byte[] filePartBuf = new byte[(int)chunkSizeArray[i]];
-				inputStream.read(filePartBuf, 0, (int)chunkSizeArray[i]);
+				byte[] filePartBuf = new byte[(int)tmpFile.length()];
+				inputStream.read(filePartBuf, 0, (int)tmpFile.length());
 				combineFile.write(filePartBuf);
 				inputStream.close();
 				
-				//tmpFile.delete(); // Deleting the tmp file part after writing into the actual file
+				tmpFile.delete(); // Deleting the tmp file part after writing into the actual file
 				
 			}
 			combineFile.close();
 			
-			//folder.delete(); // this will work only if the folder is empty
+			folder.delete(); // this will work only if the folder is empty
 			System.out.println("\n================= All Parts joined, FILE DOWNLOADED SUCCESSFULLY to download folder ==============");
 			System.out.println("\nChecking MD5SUM FILE INTEGRITY CHECK...");
 			
