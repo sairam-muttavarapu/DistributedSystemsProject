@@ -18,6 +18,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.UUID;
 
 import javax.crypto.Cipher;
 
@@ -179,13 +180,19 @@ public class EncryptionUtil {
   }
   
   public static String randomAESKeyGenerator() {
-	  byte[] r = new byte[16]; //Means 2048 bit
+	  /*byte[] r = new byte[16]; //Means 2048 bit
 	  Random rand = new Random();
 	  rand.nextBytes(r);
 	  String str = new String(r);
-	  
+	  System.out.println("r.length: "+r.length);
 	  System.out.println("Random string: "+str);
-	  return str;
+	  System.out.println("String length: "+str.length());
+	  return str;*/
+	  
+	  String uuid = UUID.randomUUID().toString();
+	  uuid = uuid.substring(0, 16);
+	  System.out.println("uuid: "+ uuid);
+	  return uuid;
   }
   public static void randomAES() {
 	  try {

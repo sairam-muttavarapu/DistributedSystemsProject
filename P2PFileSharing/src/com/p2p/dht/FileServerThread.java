@@ -114,8 +114,9 @@ public class FileServerThread implements Runnable{
 					
 					PublicKey pubKey = EncryptionUtil.getPublicKey(publicKey);
 					
-					//final String AESKey = EncryptionUtil.randomAESKeyGenerator();
-					final String AESKey = "Mary has one cat";
+					final String AESKey = EncryptionUtil.randomAESKeyGenerator();
+					//final String AESKey = "Mary has one cat";
+					
 					System.out.println("AESKey being sent: "+AESKey);
 					//Encrypting AESKey using public key of the downloader
 					final byte[] encryptedAESKey = EncryptionUtil.encrypt(AESKey, pubKey);
